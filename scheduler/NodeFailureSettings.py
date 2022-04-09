@@ -30,13 +30,14 @@ class NodeFailureSettings:
             i += 1
 
         for i in range(depth):
-            phaseToFailAt = self.rand.randint(0,len(phases) - 1)
+            # phaseToFailAt = self.rand.randint(0,len(phases) - 1)
+            phaseToFailAt = 0
             failurePerPhase[phaseToFailAt] += 1
             if failurePerPhase[phaseToFailAt] == self.num_processes:
                 del phases[phaseToFailAt]
             roundToFailAt = random.randint(0,self.num_rounds_in_protocol - 1)
             processToFail = random.randint(0,self.num_processes - 1)
-            nodeFailure = NodeFailure(phaseToFailAt,roundToFailAt,processToFail)
+            nodeFailure = NodeFailure(phaseToFailAt, roundToFailAt, processToFail)
             f.append(nodeFailure)
             i += 1
         return f

@@ -45,7 +45,10 @@ class TwinsRunner:
 
     def run(self):
         for i, scenario in enumerate(self.scenarios):
-            self.current_phase = i
+            # current_phase
+            # TODO: current_phase应该始终等于0
+            self.current_phase = 0
+
             logging.info(f'Running scenario {i+1}/{len(self.scenarios)}')
             network = runner._run_scenario(scenario,i)
 
@@ -72,6 +75,7 @@ class TwinsRunner:
         )
 
         # set phase & round
+        # TODO：
         network.current_phase = current_phase
         network.failures = self.failures
 
@@ -134,12 +138,14 @@ if __name__ == '__main__':
     # random seed
     seed = 123456
 
-    # for test
-    runner.num_of_phases = 3
+    """ twins中没有划分phase， 因此所有注入的failure都在phase 0"""
+    runner.num_of_phases = 1
 
     num_rounds_in_protocol = runner.num_of_rounds
     num_phases = runner.num_of_phases
+    # TODO：新加入了twin复制的process ？
     num_processes = runner.num_of_nodes + runner.num_of_twins
     failure_settings = NodeFailureSettings(num_rounds_in_protocol, num_phases, num_processes, depth, seed)
+    #
     runner.failures = failure_settings.failures
     runner.run()
