@@ -143,7 +143,6 @@ if __name__ == '__main__':
     runner.num_of_scenario = 3
     num_rounds_in_protocol = runner.num_of_rounds
     num_scenario = runner.num_of_scenario
-    # TODO：为什么要新加入了twin复制的process ？
     num_processes = runner.num_of_nodes
 
     # 改为每个senario独立注入failure
