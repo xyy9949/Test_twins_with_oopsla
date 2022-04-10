@@ -46,22 +46,21 @@ class TwinsRunner:
     def run(self):
         for i, scenario in enumerate(self.scenarios):
             # current_phase
-            # TODO: current_phase应该始终等于0
-            self.current_phase = 0
+            # self.current_scenario = i
 
             logging.info(f'Running scenario {i+1}/{len(self.scenarios)}')
-            network = runner._run_scenario(scenario,i)
+            network = runner._run_scenario(scenario, i)
 
             if self.log_path is not None:
                 file_path = join(self.log_path, f'{self.file_path}-{i+1}.log')
                 runner._print_log(file_path, scenario, network)
                 logging.info(f'Log saved in {file_path}')
 
-            # todo
+            # TODO：测试三个例子
             if i == 2:
                 break
 
-    def _run_scenario(self, scenario, current_phase):
+    def _run_scenario(self, scenario, current_scenario):
         logging.debug('1/3 Reading scenario.')
         round_leaders = scenario['round_leaders']
         round_partitions = scenario['round_partitions']
@@ -74,13 +73,15 @@ class TwinsRunner:
             env, model, round_partitions, firewall, self.num_of_twins
         )
 
-        # set phase & round
-        # TODO：
-        network.current_phase = current_phase
+        """ 重新对该scenario注入failure """
+        runner.seed = runner.seed + 1
+        failure_settings = NodeFailureSettings(num_rounds_in_protocol, current_scenario, num_processes, runner.depth, runner.seed)
+        runner.failures = failure_settings.failures
         network.failures = self.failures
 
-        nodes = [self.NodeClass(i, network, *self.node_args)
-                 for i in range(self.num_of_nodes+self.num_of_twins)]
+        """ 改正了原版代码的错误 self.num_of_nodes --> self.num_of_nodes + 1 """
+        nodes = [self.NodeClass(i, network, * self.node_args)
+                 for i in range(self.num_of_nodes + 1)]
         [n.set_le(TwinsLE(n, network, round_leaders)) for n in nodes]
         [network.add_node(n) for n in nodes]
 
@@ -134,18 +135,19 @@ if __name__ == '__main__':
     #runner = TwinsRunner(args.path, StreamletNode, [], log_path=args.log)
 
     # how many failures
-    depth = 6
+    runner.depth = 6
     # random seed
-    seed = 123456
+    runner.seed = 123456
 
-    """ twins中没有划分phase， 因此所有注入的failure都在phase 0"""
-    runner.num_of_phases = 1
-
+    """ 先对三个scenario进行注入failure，每个scenario随机注入0-depth个failure"""
+    runner.num_of_scenario = 3
     num_rounds_in_protocol = runner.num_of_rounds
-    num_phases = runner.num_of_phases
-    # TODO：新加入了twin复制的process ？
-    num_processes = runner.num_of_nodes + runner.num_of_twins
-    failure_settings = NodeFailureSettings(num_rounds_in_protocol, num_phases, num_processes, depth, seed)
-    #
-    runner.failures = failure_settings.failures
+    num_scenario = runner.num_of_scenario
+    # TODO：为什么要新加入了twin复制的process ？
+    num_processes = runner.num_of_nodes
+
+    # 改为每个senario独立注入failure
+    # failure_settings = NodeFailureSettings(num_rounds_in_protocol, num_scenario, num_processes, depth, seed)
+    # #
+    # runner.failures = failure_settings.failures
     runner.run()
