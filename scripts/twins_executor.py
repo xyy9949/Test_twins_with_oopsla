@@ -46,9 +46,7 @@ class TwinsRunner:
 
     def run(self):
         for i, scenario in enumerate(self.scenarios):
-            # current_phase
-            # self.current_scenario = i
-
+            self.current_phase = i
             logging.info(f'Running scenario {i+1}/{len(self.scenarios)}')
             network = runner._run_scenario(scenario, i)
 
@@ -78,6 +76,7 @@ class TwinsRunner:
         self.seed = self.seed + 1
         failure_settings = NodeFailureSettings(num_rounds_in_protocol, current_scenario, num_processes, runner.depth, runner.seed)
         self.failures = failure_settings.failures
+        network.current_phase = current_scenario
         network.failures = self.failures
 
         """ 改正了原版代码的错误 self.num_of_nodes --> self.num_of_nodes + self.num_of_twins """
