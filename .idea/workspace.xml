@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="94eecd9c-6049-47f4-90eb-b53c9944a1bd" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/twins_executor.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/twins_executor.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,7 +68,7 @@
       <workItem from="1649927933146" duration="625000" />
       <workItem from="1649928576689" duration="114000" />
       <workItem from="1649928813175" duration="8407000" />
-      <workItem from="1649940280999" duration="301000" />
+      <workItem from="1649940280999" duration="991000" />
     </task>
     <servers />
   </component>
@@ -120,15 +119,10 @@
           <line>24</line>
           <option name="timeStamp" value="8" />
         </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/fhs/node.py</url>
-          <line>31</line>
-          <option name="timeStamp" value="9" />
-        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Test_twins_with_oopsla$twins_executor.coverage" NAME="twins_executor Coverage Results" MODIFIED="1649939791909" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
+    <SUITE FILE_PATH="coverage/Test_twins_with_oopsla$twins_executor.coverage" NAME="twins_executor Coverage Results" MODIFIED="1649940629889" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
   </component>
 </project>
