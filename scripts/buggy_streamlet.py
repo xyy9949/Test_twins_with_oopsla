@@ -1,5 +1,5 @@
 '''
-This is a quick and dirty simulation of a buggy stremalet protocol, as
+This is a quick and dirty simulation of a buggy streamlet protocol, as
 described in the Twins paper.
 '''
 import sys

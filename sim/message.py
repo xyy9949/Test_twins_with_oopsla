@@ -22,7 +22,8 @@ class Message:
                 k = setting.k
                 r = setting.r
                 p = setting.p
-            if current_phase == k and current_round == r:
+            # if current_phase == k and current_round == r:
+            if current_round == r:
                 if sender_name == p or receiver_name == p:
                     return True
         return False
