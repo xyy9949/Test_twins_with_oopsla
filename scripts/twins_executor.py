@@ -36,6 +36,7 @@ class TwinsRunner:
         self.num_of_phases = len(self.scenarios)
         # how many rounds in one phase
         self.num_of_rounds = len(self.scenarios[0]['round_leaders'])
+        self.seed = None
         self.failures = None
         logging.debug(f'Scenario file {args.path} successfully loaded.')
         logging.info(
@@ -74,9 +75,9 @@ class TwinsRunner:
         )
 
         """ 重新对该scenario注入failure """
-        runner.seed = runner.seed + 1
+        self.seed = self.seed + 1
         failure_settings = NodeFailureSettings(num_rounds_in_protocol, current_scenario, num_processes, runner.depth, runner.seed)
-        runner.failures = failure_settings.failures
+        self.failures = failure_settings.failures
         network.failures = self.failures
 
         """ 改正了原版代码的错误 self.num_of_nodes --> self.num_of_nodes + self.num_of_twins """
