@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/twins-simulator-master.iml" filepath="$PROJECT_DIR$/.idea/twins-simulator-master.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Test_twins_with_oopsla.iml" filepath="$PROJECT_DIR$/.idea/Test_twins_with_oopsla.iml" />
     </modules>
   </component>
 </project>

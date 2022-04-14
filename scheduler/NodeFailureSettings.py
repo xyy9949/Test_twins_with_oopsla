@@ -25,36 +25,16 @@ class NodeFailureSettings:
 
     def getBoundedRandomFailures(self, depth):
         f = []
-        phases = 0
-        failurePerPhase = 0
-        # phases = []
-        # failurePerPhase = []
-        # phases.append(0)
-        # failurePerPhase.append(0)
-        # for i in range(self.num_phases):
-        #     phases.append(i)
-        #     i += 1
-        # for i in range(self.num_phases):
-        #     failurePerPhase.append(0)
-        #     i += 1
         round_process = []
         for i in range(self.num_rounds_in_protocol):
             for j in range(self.num_processes):
                 round_process.append((i, j))
 
         for i in range(depth):
-            # phaseToFailAt = self.rand.randint(0,len(phases) - 1)
-            # phaseToFailAt = self.num_phases
-            # failurePerPhase[self.current_phase] += 1
-            # failurePerPhase += 1
-            # if failurePerPhase[self.current_phase] == self.num_processes:
-            #     del phases[phaseToFailAt]
             failureAt = self.rand.randint(0, len(round_process) - 1)
             roundToFail = round_process[failureAt][0]
             processToFail = round_process[failureAt][1]
             del round_process[failureAt]
-            # roundToFailAt = random.randint(0,self.num_rounds_in_protocol - 1)
-            # processToFail = random.randint(0,self.num_processes - 1)
             nodeFailure = NodeFailure(self.current_phase, roundToFail, processToFail)
             f.append(nodeFailure)
             i += 1
