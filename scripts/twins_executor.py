@@ -79,9 +79,9 @@ class TwinsRunner:
         runner.failures = failure_settings.failures
         network.failures = self.failures
 
-        """ 改正了原版代码的错误 self.num_of_nodes --> self.num_of_nodes + 1 """
+        """ 改正了原版代码的错误 self.num_of_nodes --> self.num_of_nodes + self.num_of_twins """
         nodes = [self.NodeClass(i, network, * self.node_args)
-                 for i in range(self.num_of_nodes + 1)]
+                 for i in range(self.num_of_nodes + self.num_of_twins)]
         [n.set_le(TwinsLE(n, network, round_leaders)) for n in nodes]
         [network.add_node(n) for n in nodes]
 
