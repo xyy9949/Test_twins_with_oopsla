@@ -25,6 +25,8 @@ class Block(Message):
     def digest(self):
         return f'{self.author}||{self.round}'
 
+    def for_sort(self):
+        return f'Block(round:{self.round}, author:{self.author}, content:{self.qc})'
 
 # --- Votes ---
 

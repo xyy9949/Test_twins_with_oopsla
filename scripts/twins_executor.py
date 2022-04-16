@@ -1,5 +1,6 @@
 import json
 import sys
+
 sys.path += '../fhs'
 sys.path += '../streamlet'
 sys.path += '../twins'
@@ -49,7 +50,7 @@ class TwinsRunner:
 
         for i, scenario in enumerate(self.scenarios):
             self.current_phase = i
-            logging.info(f'Running scenario {i+1}/{len(self.scenarios)}')
+            logging.info(f'Running scenario {i + 1}/{len(self.scenarios)}')
             network = runner._run_scenario(scenario, i)
 
             # TODO：增加安全性检验：
@@ -60,7 +61,7 @@ class TwinsRunner:
             print(f'Safety check failure number: {self.safety_fail_num}\n')
 
             if self.log_path is not None:
-                file_path = join(self.log_path, f'{self.file_path}-{i+1}.log')
+                file_path = join(self.log_path, f'{self.file_path}-{i + 1}.log')
                 runner._print_log(file_path, scenario, network)
                 logging.info(f'Log saved in {file_path}')
 
@@ -83,13 +84,14 @@ class TwinsRunner:
 
         """ 重新对该scenario注入failure """
         self.seed = self.seed + 1
-        failure_settings = NodeFailureSettings(num_rounds_in_protocol, current_scenario, num_processes, runner.depth, runner.seed)
+        failure_settings = NodeFailureSettings(num_rounds_in_protocol, current_scenario, num_processes, runner.depth,
+                                               runner.seed)
         self.failures = failure_settings.failures
         network.current_phase = current_scenario
         network.failures = self.failures
 
         """ 改正了原版代码的错误 self.num_of_nodes --> self.num_of_nodes + self.num_of_twins """
-        nodes = [self.NodeClass(i, network, * self.node_args)
+        nodes = [self.NodeClass(i, network, *self.node_args)
                  for i in range(self.num_of_nodes + self.num_of_twins)]
         [n.set_le(TwinsLE(n, network, round_leaders)) for n in nodes]
         [network.add_node(n) for n in nodes]
@@ -112,7 +114,7 @@ class TwinsRunner:
         data += ['\n\nfailures:\n']
         failures = ''
         for failure in self.failures:
-            if isinstance(failure,NodeFailure):
+            if isinstance(failure, NodeFailure):
                 failures += '   '
                 failures += failure.__str__()
         data += [failures]
@@ -133,9 +135,9 @@ class TwinsRunner:
         longest = None
         for i in network.nodes:
             committed_blocks = network.nodes[i].storage.committed
-            committed_list = list (sorted(committed_blocks, key = runner.take_round))
+            committed_list = list(sorted(committed_blocks, key=lambda x: x.for_sort()))
             # print(committed_list[0])
-            if longest == None:
+            if longest is None:
                 longest = committed_list
                 continue
             for i in range(min(len(longest), len(committed_list))):
@@ -145,8 +147,10 @@ class TwinsRunner:
             if len(longest) < len(committed_list):
                 longest = committed_list
         return True
+
     def take_round(self, elem):
         return elem.round
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Twins Executor.')
@@ -164,7 +168,7 @@ if __name__ == '__main__':
 
     sync_storage = SyncStorage()
     runner = TwinsRunner(args.path, FHSNode, [sync_storage], log_path=args.log)
-    #runner = TwinsRunner(args.path, StreamletNode, [], log_path=args.log)
+    # runner = TwinsRunner(args.path, StreamletNode, [], log_path=args.log)
 
     # how many failures
     runner.depth = 6
