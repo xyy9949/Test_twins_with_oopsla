@@ -27,7 +27,7 @@ class Network:
     @property
     def quorum(self):
         f = (len(self.nodes) - 1) // 3
-        return len(self.nodes) - f - 1
+        return len(self.nodes) - f
 
     def add_node(self, node):
         self.nodes[node.name] = node
