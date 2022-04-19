@@ -5,6 +5,7 @@ from sim.leader_election import RoundRobinLE
 
 class Node():
     def __init__(self, name, network):
+        self.pseudonym = None
         self.name = name
         self.network = network
         self.round = 0

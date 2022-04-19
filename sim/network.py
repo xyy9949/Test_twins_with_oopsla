@@ -23,6 +23,7 @@ class Network:
         self.current_phase = None
         self.current_round = None
         self.failures = None
+        self.contacts = None
 
     @property
     def quorum(self):

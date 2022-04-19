@@ -1,6 +1,8 @@
 import json
 import sys
 
+from sim.Contacts import Contacts
+
 sys.path += '../fhs'
 sys.path += '../streamlet'
 sys.path += '../twins'
@@ -58,16 +60,12 @@ class TwinsRunner:
             if not self.safety_check:
                 self.safety_fail_num = self.safety_fail_num + 1
 
-            print(f'Safety check failure number: {self.safety_fail_num}\n')
-
             if self.log_path is not None:
                 file_path = join(self.log_path, f'{self.file_path}-{i + 1}.log')
                 runner._print_log(file_path, scenario, network)
                 logging.info(f'Log saved in {file_path}')
 
-            # TODO：测试5个例子
-            if i == 4:
-                break
+        print(f'Safety check failure number: {self.safety_fail_num}\n')
 
     def _run_scenario(self, scenario, current_scenario):
         logging.debug('1/3 Reading scenario.')
@@ -95,6 +93,12 @@ class TwinsRunner:
                  for i in range(self.num_of_nodes + self.num_of_twins)]
         [n.set_le(TwinsLE(n, network, round_leaders)) for n in nodes]
         [network.add_node(n) for n in nodes]
+
+        # set pseudonym for nodes
+        compromised = [0]
+        # compromised = scenario['compromised']
+        network.contacts = Contacts(compromised, self.num_of_nodes)
+        network.contacts.set_pseudonym(nodes, self.num_of_nodes)
 
         logging.debug(f'3/3 Executing scenario ({len(round_leaders)} rounds).')
         network.run(until=150)
@@ -147,9 +151,6 @@ class TwinsRunner:
             if len(longest) < len(committed_list):
                 longest = committed_list
         return True
-
-    def take_round(self, elem):
-        return elem.round
 
 
 if __name__ == '__main__':
