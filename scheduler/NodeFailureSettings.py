@@ -44,7 +44,7 @@ class NodeFailureSettings:
         #     i += 1
         f.append(NodeFailure(self.current_phase, 3, 4))
         f.append(NodeFailure(self.current_phase, 4, 3))
-        f.append(NodeFailure(self.current_phase, 5, 2))
+        f.append(NodeFailure(self.current_phase, 5, 1))
         return f
 
 

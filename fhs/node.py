@@ -45,8 +45,6 @@ class FHSNode(Node):
 
         # Handle incoming votes and new view messages.
         elif isinstance(message, GenericVote):
-            if message.round == 5 :
-                print()
             qc = self.storage.add_vote(message)
             if qc is not None:
                 self._process_block(qc.block(self.sync_storage))

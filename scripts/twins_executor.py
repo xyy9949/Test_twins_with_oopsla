@@ -75,7 +75,7 @@ class TwinsRunner:
         env = simpy.Environment()
         model = SyncModel()
         network = TwinsNetwork(
-            env, model, firewall, self.num_of_twins
+            env, model, firewall, self.num_of_twins, self.num_of_rounds
         )
 
         """ 重新对该scenario注入failure """

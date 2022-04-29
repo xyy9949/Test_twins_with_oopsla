@@ -3,10 +3,11 @@ from sim.leader_election import LeaderElection
 
 
 class TwinsNetwork(Network):
-    def __init__(self, env, model, firewall, num_of_twins):
+    def __init__(self, env, model, firewall, num_of_twins, num_of_rounds):
         super().__init__(env, model)
         self.firewall = firewall
         self.num_of_twins = num_of_twins
+        self.num_of_rounds = num_of_rounds
 
     @property
     def quorum(self):
@@ -15,7 +16,8 @@ class TwinsNetwork(Network):
         return sole_nodes - f - 2
 
     def send(self, fromx, tox, message):
-        self.env.process(self._send(fromx, tox, message))
+        if fromx.round <= self.num_of_rounds:
+            self.env.process(self._send(fromx, tox, message))
 
 
 class TwinsLE(LeaderElection):
