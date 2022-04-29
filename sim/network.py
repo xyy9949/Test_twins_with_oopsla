@@ -1,5 +1,5 @@
 import numpy as np
-
+import copy
 
 class BColors:
     # OK = '\033[92m'
@@ -46,17 +46,10 @@ class Network:
         self.env.process(self._send(fromx, tox, message))
 
     def _send(self, fromx, tox, message):
-        message.sender = fromx
-        message.receiver = tox
-
         # Only start sending after a delay.
         delay = 0.0 if fromx == tox else self.model.delay(fromx, tox, message)
         sent_time = round(self.env.now, 2)
         yield self.env.timeout(delay)
-
-        # Deliver messages.
-        if tox.receive(message, self.current_phase, self.failures) == -1:
-            return
 
         # Record a trace.
         entry = (
@@ -64,10 +57,14 @@ class Network:
             f'{round(self.env.now, 2):.2f}',  # receiving time
             fromx,  # sender
             tox,  # receiver
-            message  # message
+            message,  # message
+            message.round
         )
         self.trace.append(entry)
         tox.log(entry, color=BColors.INFO)
+        # Deliver messages.
+        if tox.receive(fromx, tox, message, self.current_phase, self.failures) == -1:
+            self.trace.pop()
 
     def print_trace(self, filter=None):
         print()

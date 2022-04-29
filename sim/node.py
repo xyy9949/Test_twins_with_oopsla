@@ -19,7 +19,7 @@ class Node():
     def set_le(self, le):
         self.le = le
 
-    def receive(self, message, current_phase, failures):
+    def receive(self,fromx, tox, message, current_phase, failures):
         """ Process received message.
 
         Args:

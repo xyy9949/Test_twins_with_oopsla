@@ -3,9 +3,8 @@ from sim.leader_election import LeaderElection
 
 
 class TwinsNetwork(Network):
-    def __init__(self, env, model, round_partitions, firewall, num_of_twins):
+    def __init__(self, env, model, firewall, num_of_twins):
         super().__init__(env, model)
-        self.round_partitions = round_partitions
         self.firewall = firewall
         self.num_of_twins = num_of_twins
 
@@ -13,27 +12,10 @@ class TwinsNetwork(Network):
     def quorum(self):
         sole_nodes = len(self.nodes) - self.num_of_twins
         f = (sole_nodes - 1) // 3
-        return sole_nodes - f
-
+        return sole_nodes - f - 2
 
     def send(self, fromx, tox, message):
-        if str(fromx.round) in self.round_partitions:
-            partitions = self.round_partitions[str(fromx.round)]
-            ok = any(tox.name in p and fromx.name in p for p in partitions)
-            ok &= self._pass_firewall(fromx, tox)
-
-            # above no need
-            ok = True
-            if ok:
-                self.env.process(self._send(fromx, tox, message))
-
-    def _pass_firewall(self, fromx, tox):
-        ok = True
-        if str(fromx.round) in self.firewall:
-            rule = self.firewall[str(fromx.round)]
-            if str(fromx.name) in rule:
-                ok &= not tox.name in rule[str(fromx.name)]
-        return ok
+        self.env.process(self._send(fromx, tox, message))
 
 
 class TwinsLE(LeaderElection):

@@ -23,7 +23,8 @@ from streamlet.node import StreamletNode
 
 
 class TwinsRunner:
-    def __init__(self, file_path, NodeClass, node_args, log_path=None):
+    def __init__(self, num_of_rounds, file_path, NodeClass, node_args, log_path=None):
+        self.depth = None
         self.file_path = file_path
         self.log_path = log_path
         self.NodeClass = NodeClass
@@ -35,10 +36,8 @@ class TwinsRunner:
         self.num_of_nodes = data['num_of_nodes']
         self.num_of_twins = data['num_of_twins']
         self.scenarios = data['scenarios']
-        # how many scenarios
-        self.num_of_phases = len(self.scenarios)
         # how many rounds in one phase
-        self.num_of_rounds = len(self.scenarios[0]['round_leaders'])
+        self.num_of_rounds = num_of_rounds
         self.seed = None
         self.failures = None
         logging.debug(f'Scenario file {args.path} successfully loaded.')
@@ -70,20 +69,19 @@ class TwinsRunner:
     def _run_scenario(self, scenario, current_scenario):
         logging.debug('1/3 Reading scenario.')
         round_leaders = scenario['round_leaders']
-        round_partitions = scenario['round_partitions']
         firewall = scenario['firewall'] if 'firewall' in scenario else {}
 
         logging.debug('2/3 Setting up network.')
         env = simpy.Environment()
         model = SyncModel()
         network = TwinsNetwork(
-            env, model, round_partitions, firewall, self.num_of_twins
+            env, model, firewall, self.num_of_twins
         )
 
         """ 重新对该scenario注入failure """
         self.seed = self.seed + 1
-        failure_settings = NodeFailureSettings(num_rounds_in_protocol, current_scenario, num_processes, runner.depth,
-                                               runner.seed)
+        failure_settings = NodeFailureSettings(self.num_of_rounds, current_scenario, self.num_of_nodes + self.num_of_twins, self.depth,
+                                               self.seed)
         self.failures = failure_settings.failures
         network.current_phase = current_scenario
         network.failures = self.failures
@@ -95,10 +93,10 @@ class TwinsRunner:
         [network.add_node(n) for n in nodes]
 
         # set pseudonym for nodes
-        compromised = [0]
+        # compromised = [0]
         # compromised = scenario['compromised']
-        network.contacts = Contacts(compromised, self.num_of_nodes)
-        network.contacts.set_pseudonym(nodes, self.num_of_nodes)
+        # network.contacts = Contacts(compromised, self.num_of_nodes)
+        # network.contacts.set_pseudonym(nodes, self.num_of_nodes)
 
         logging.debug(f'3/3 Executing scenario ({len(round_leaders)} rounds).')
         network.run(until=150)
@@ -138,6 +136,10 @@ class TwinsRunner:
     def check_safety(self, network):
         longest = None
         for i in network.nodes:
+            if i == 0:
+                continue
+            if i == 4:
+                break
             committed_blocks = network.nodes[i].storage.committed
             committed_list = list(sorted(committed_blocks, key=lambda x: x.for_sort()))
             # print(committed_list[0])
@@ -168,22 +170,12 @@ if __name__ == '__main__':
     )
 
     sync_storage = SyncStorage()
-    runner = TwinsRunner(args.path, FHSNode, [sync_storage], log_path=args.log)
-    # runner = TwinsRunner(args.path, StreamletNode, [], log_path=args.log)
+    rounds_of_protocol = 5
+    runner = TwinsRunner(rounds_of_protocol, args.path, FHSNode, [sync_storage], log_path=args.log)
 
-    # how many failures
-    runner.depth = 6
+    # how many failures in one scenario
+    runner.depth = 5
     # random seed
-    runner.seed = 123456
+    runner.seed = 1234567
 
-    """ 先对三个scenario进行注入failure，每个scenario随机注入0-depth个failure"""
-    runner.num_of_scenario = 3
-    num_rounds_in_protocol = runner.num_of_rounds
-    num_scenario = runner.num_of_scenario
-    num_processes = runner.num_of_nodes
-
-    # 改为每个senario独立注入failure
-    # failure_settings = NodeFailureSettings(num_rounds_in_protocol, num_scenario, num_processes, depth, seed)
-    # #
-    # runner.failures = failure_settings.failures
     runner.run()

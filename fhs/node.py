@@ -23,16 +23,15 @@ class FHSNode(Node):
         # Node store (each node has its own).
         self.storage = NodeStorage(self)
 
-    def receive(self, message, current_phase, failures):
+    def receive(self, fromx, tox, message, current_phase, failures):
         """ Handles incoming messages. """
-
-        current_round = self.round
+        current_round = message.round
 
         # drop message
-        if message.is_to_drop(current_round, current_phase, failures):
-            if self.name == message.sender.name or self.name == message.receiver.name:
-                logging.info(f'drop message {message} from {message.sender} to {message.receiver} in round {self.round}.')
-                self.log(f'drop message {message} from {message.sender} to {message.receiver} in round {self.round}.')
+        if message.is_to_drop(fromx, tox, current_round, current_phase, failures):
+            if self.name == fromx.name or self.name == tox.name:
+                logging.info(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
+                self.log(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
             return -1
 
         if not (isinstance(message, Message) and message.verify(self.network)):
@@ -42,10 +41,12 @@ class FHSNode(Node):
         if isinstance(message, Block):
             self.sync_storage.add_block(message)
             self._process_qc(message.qc)
-            self._process_block(message)
+            self._process_block(message) # BK(Node4, 5, QC(4||4), *))
 
         # Handle incoming votes and new view messages.
         elif isinstance(message, GenericVote):
+            if message.round == 5 :
+                print()
             qc = self.storage.add_vote(message)
             if qc is not None:
                 self._process_block(qc.block(self.sync_storage))
@@ -68,6 +69,7 @@ class FHSNode(Node):
             self.last_voted_round = block.round
             self.round = max(self.round, block.round+1)
             vote = Vote(block.digest(), self.name)
+            vote.round = self.round
             indeces = self.le.get_leader(round=block.round+1)
             next_leaders = [self.network.nodes[x] for x in indeces]
             self.log(f'Sending vote {vote} to {next_leaders}')

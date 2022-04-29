@@ -12,7 +12,7 @@ class NodeFailureSettings:
 
         self.seed = seed
         self.rand = random.Random(seed)
-        self.depth = self.rand.randint(0, depth)
+        self.depth = depth # self.rand.randint(0, depth)
         self.failures = self.getRandomFailures()
         """ 最多生成depth个failure """
 
@@ -30,14 +30,21 @@ class NodeFailureSettings:
             for j in range(self.num_processes):
                 round_process.append((i, j))
 
-        for i in range(depth):
-            failureAt = self.rand.randint(0, len(round_process) - 1)
-            roundToFail = round_process[failureAt][0]
-            processToFail = round_process[failureAt][1]
-            del round_process[failureAt]
-            nodeFailure = NodeFailure(self.current_phase, roundToFail, processToFail)
-            f.append(nodeFailure)
-            i += 1
+        # for i in range(depth):
+        #     # no use for failures at round 1 or 2
+        #     failure_start_at = 2 * self.num_processes
+        #     if failure_start_at == len(round_process) - 1:
+        #         break
+        #     failureAt = self.rand.randint(failure_start_at, len(round_process) - 1)
+        #     roundToFail = round_process[failureAt][0]
+        #     processToFail = round_process[failureAt][1]
+        #     del round_process[failureAt]
+        #     nodeFailure = NodeFailure(self.current_phase, roundToFail + 1, processToFail)
+        #     f.append(nodeFailure)
+        #     i += 1
+        f.append(NodeFailure(self.current_phase, 3, 4))
+        f.append(NodeFailure(self.current_phase, 4, 3))
+        f.append(NodeFailure(self.current_phase, 5, 2))
         return f
 
 

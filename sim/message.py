@@ -2,8 +2,7 @@ from scheduler.NodeFailureSettings import NodeFailure
 
 
 class Message:
-    sender = None
-    receiver = None
+    round = None
 
     def set_sender(self, sender):
         self.sender = sender
@@ -11,9 +10,11 @@ class Message:
     def set_receiver(self, receiver):
         self.receiver = receiver
 
-    def is_to_drop(self,current_round,current_phase,failures):
-        sender_name = self.sender.name
-        receiver_name = self.receiver.name
+    def is_to_drop(self, fromx, tox, current_round,current_phase,failures):
+        sender_name = fromx.name
+        receiver_name = tox.name
+        if sender_name == receiver_name:
+            return False
         k = None
         r = None
         p = None
