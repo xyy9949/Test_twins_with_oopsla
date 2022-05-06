@@ -17,15 +17,17 @@ class Message:
             return False
         k = None
         r = None
-        p = None
+        sender = None
+        receiver = None
         for i,setting in enumerate(failures):
             if isinstance(setting, NodeFailure):
                 k = setting.k
                 r = setting.r
-                p = setting.p
+                sender = setting.sender
+                receiver = setting.receiver
             # if current_phase == k and current_round == r:
             if current_round == r:
-                if sender_name == p or receiver_name == p:
+                if sender_name == sender or receiver_name == receiver:
                     return True
         return False
 
