@@ -48,7 +48,7 @@ class FHSNode(Node):
             qc = self.storage.add_vote(message)
             if qc is not None:
                 self._process_block(qc.block(self.sync_storage))
-                block = Block(qc, self.round, self.name)
+                block = Block(qc, self.round + 1, self.name)
                 self.network.broadcast(self, block)
 
         else:

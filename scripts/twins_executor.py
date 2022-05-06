@@ -170,7 +170,9 @@ if __name__ == '__main__':
     )
 
     sync_storage = SyncStorage()
-    rounds_of_protocol = 5
+    # todo
+    # need to change when round number change
+    rounds_of_protocol = 7
     runner = TwinsRunner(rounds_of_protocol, args.path, FHSNode, [sync_storage], log_path=args.log)
 
     # how many failures in one scenario
