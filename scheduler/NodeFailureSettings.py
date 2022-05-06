@@ -42,23 +42,20 @@ class NodeFailureSettings:
         #     nodeFailure = NodeFailure(self.current_phase, roundToFail + 1, processToFail)
         #     f.append(nodeFailure)
         #     i += 1
-        # drop message about node 4
-        f.append(NodeFailure(self.current_phase, 3, 0, 4))
-        f.append(NodeFailure(self.current_phase, 3, 1, 4))
-        f.append(NodeFailure(self.current_phase, 3, 2, 4))
-        f.append(NodeFailure(self.current_phase, 3, 3, 4))
-        f.append(NodeFailure(self.current_phase, 3, 4, 4))
-        f.append(NodeFailure(self.current_phase, 3, 4, 0))
-        f.append(NodeFailure(self.current_phase, 3, 4, 1))
-        f.append(NodeFailure(self.current_phase, 3, 4, 2))
-        f.append(NodeFailure(self.current_phase, 3, 4, 3))
-        f.append(NodeFailure(self.current_phase, 3, 4, 4))
-        # drop message about node 3
-        f.append(NodeFailure(self.current_phase, 4, 3, 0))
-        f.append(NodeFailure(self.current_phase, 4, 3, 4))
-        # drop message about node 1
-        f.append(NodeFailure(self.current_phase, 7, 0, 1))
-        f.append(NodeFailure(self.current_phase, 7, 4, 1))
+
+        # -1 means all nodes
+        f.append(NodeFailure(self.current_phase, 3, -1, 4))
+        f.append(NodeFailure(self.current_phase, 3, 4, -1))
+
+        f.append(NodeFailure(self.current_phase, 4, -1, 3))
+        f.append(NodeFailure(self.current_phase, 4, 3, -1))
+        f.append(NodeFailure(self.current_phase, 5, -1, 3))
+        f.append(NodeFailure(self.current_phase, 5, 3, -1))
+
+        f.append(NodeFailure(self.current_phase, 6, -1, 1))
+        f.append(NodeFailure(self.current_phase, 6, 1, -1))
+        f.append(NodeFailure(self.current_phase, 7, -1, 1))
+        f.append(NodeFailure(self.current_phase, 7, 1, -1))
         return f
 
 

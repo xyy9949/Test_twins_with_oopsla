@@ -10,7 +10,7 @@ class Message:
     def set_receiver(self, receiver):
         self.receiver = receiver
 
-    def is_to_drop(self, fromx, tox, current_round,current_phase,failures):
+    def is_to_drop(self, fromx, tox, current_round, current_phase, failures):
         sender_name = fromx.name
         receiver_name = tox.name
         if sender_name == receiver_name:
@@ -27,7 +27,11 @@ class Message:
                 receiver = setting.receiver
             # if current_phase == k and current_round == r:
             if current_round == r:
-                if sender_name == sender and receiver_name == receiver:
+                if sender == -1 and receiver_name == receiver:
+                    return True
+                elif sender_name == sender and receiver == -1:
+                    return True
+                elif sender_name == sender and receiver_name == receiver:
                     return True
         return False
 
