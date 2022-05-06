@@ -109,7 +109,8 @@ class FHSNode(Node):
                 self.log(
                     f'Timing out! (round {self.round})', color=BColors.WARNING
                 )
-                self.round += 1
+                # 隔了一个发送bk的round
+                self.round += 2
                 self.timeout = self.DELAY
                 vote = NewView(self.highest_qc, self.round, self.name)
                 indeces = self.le.get_leader()
