@@ -1,14 +1,17 @@
+from scheduler.SaveStatue import NodeStatue, RoundStatue
 from sim.node import Node
 from sim.network import BColors
 from fhs.messages import Message, Block, GenericVote, Vote, NewView
 from fhs.storage import NodeStorage, SyncStorage
 import logging
 
+
 class FHSNode(Node):
     DELAY = 15  # Delay before timeout.
 
     def __init__(self, name, network, sync_storage):
         super().__init__(name, network)
+        self.current_phase = None
         self.timeout = self.DELAY
         self.round = 3
         self.last_voted_round = 2
@@ -41,7 +44,7 @@ class FHSNode(Node):
         if isinstance(message, Block):
             self.sync_storage.add_block(message)
             self._process_qc(message.qc)
-            self._process_block(message) # BK(Node4, 5, QC(4||4), *))
+            self._process_block(message)
 
         # Handle incoming votes and new view messages.
         elif isinstance(message, GenericVote):
@@ -50,6 +53,10 @@ class FHSNode(Node):
                 self._process_block(qc.block(self.sync_storage))
                 block = Block(qc, self.round + 1, self.name)
                 self.network.broadcast(self, block)
+                # do save node statue as a leader
+                temp_leader_statue = NodeStatue(self.round + 1, self.name, self.highest_qc.__repr__,
+                                                self.highest_qc_round, self.last_voted_round, self.preferred_round,
+                                                self.storage.committed, self.storage.votes)
 
         else:
             assert False  # pragma: no cover
@@ -65,13 +72,17 @@ class FHSNode(Node):
             # checkpoint
             self.timeout = self.DELAY
             self.last_voted_round = block.round
-            self.round = max(self.round, block.round+1)
+            self.round = max(self.round, block.round + 1)
             vote = Vote(block.digest(), self.name)
             vote.round = self.round
-            indeces = self.le.get_leader(round=block.round+1)
+            indeces = self.le.get_leader(round=block.round + 1)
             next_leaders = [self.network.nodes[x] for x in indeces]
             self.log(f'Sending vote {vote} to {next_leaders}')
             [self.network.send(self, x, vote) for x in next_leaders]
+            # do save node statue as a follower
+            temp_follower_statue = NodeStatue(self.round, self.name, self.highest_qc.__repr__,
+                                              self.highest_qc_round, self.last_voted_round, self.preferred_round,
+                                              self.storage.committed, self.storage.votes)
 
     def _process_qc(self, qc):
         self.log(f'Received QC {qc}', color=BColors.OK)

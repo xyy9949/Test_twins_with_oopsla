@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 
+
 class BColors:
     # OK = '\033[92m'
     # INFO = '\033[94m'
@@ -38,6 +39,12 @@ class Network:
         [self.env.process(n.send()) for n in self.nodes.values()]
         self.env.run(until=until)
 
+    def can_save_round_statue(self, round):
+        for node in self.nodes.values():
+            if node.round <= round:
+                return False
+        return True
+
     def broadcast(self, fromx, message):
         for tox in self.nodes.values():
             self.send(fromx, tox, message)
@@ -65,6 +72,9 @@ class Network:
         # Deliver messages.
         if tox.receive(fromx, tox, message, self.current_phase, self.failures) == -1:
             self.trace.pop()
+        else:
+            # todo : save statue of tox
+            print()
 
     def print_trace(self, filter=None):
         print()
@@ -82,7 +92,7 @@ class SimpleModel:
 
     def __init__(self):
         self.constant = 1
-        self.linear_factor = 1/1000
+        self.linear_factor = 1 / 1000
         self.gamma_k, self.gamma_theta = 2, 1
 
     def delay(self, fromx, tox, message):

@@ -1,6 +1,7 @@
 import json
 import sys
 
+from scheduler.SaveStatue import SaveStatue
 from sim.Contacts import Contacts
 
 sys.path += '../fhs'
@@ -24,6 +25,8 @@ from streamlet.node import StreamletNode
 
 class TwinsRunner:
     def __init__(self, num_of_rounds, file_path, NodeClass, node_args, log_path=None):
+        self.safety_fail_num = None
+        self.safety_check = None
         self.depth = None
         self.file_path = file_path
         self.log_path = log_path
@@ -40,6 +43,7 @@ class TwinsRunner:
         self.num_of_rounds = num_of_rounds
         self.seed = None
         self.failures = None
+        self.current_phase = None
         logging.debug(f'Scenario file {args.path} successfully loaded.')
         logging.info(
             f'Settings: {self.num_of_nodes} nodes, {self.num_of_twins} twins, '
@@ -48,11 +52,16 @@ class TwinsRunner:
 
     def run(self):
         self.safety_fail_num = 0
+        # init StatueList
+        save_statue = SaveStatue(self.num_of_nodes - self.num_of_twins, 2 * self.num_of_twins)
 
         for i, scenario in enumerate(self.scenarios):
             self.current_phase = i
             logging.info(f'Running scenario {i + 1}/{len(self.scenarios)}')
             network = runner._run_scenario(scenario, i)
+
+            # init save_statue
+
 
             # TODO：增加安全性检验：
             self.safety_check = runner.check_safety(network)
@@ -91,6 +100,8 @@ class TwinsRunner:
                  for i in range(self.num_of_nodes + self.num_of_twins)]
         [n.set_le(TwinsLE(n, network, round_leaders)) for n in nodes]
         [network.add_node(n) for n in nodes]
+        for n in nodes:
+            n.current_phase = current_scenario
 
         # set pseudonym for nodes
         # compromised = [0]
@@ -157,9 +168,12 @@ class TwinsRunner:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Twins Executor.')
-    parser.add_argument('path', help='path to the scenario file')
+    parser.add_argument('--num_of_protocol', help='num of protocol')
+    parser.add_argument('--depth', help='depth')
+    parser.add_argument('--seed', help='seed')
+    parser.add_argument('--path', help='path to the scenario file')
     parser.add_argument('--log', help='output log directory')
-    parser.add_argument('-v', action='store_true', help='verbose logging')
+    parser.add_argument('--v', action='store_true', help='verbose logging')
     args = parser.parse_args()
 
     args.v = True
@@ -170,14 +184,12 @@ if __name__ == '__main__':
     )
 
     sync_storage = SyncStorage()
-    # todo
-    # need to change when round number change
-    rounds_of_protocol = 7
+    rounds_of_protocol = int(args.num_of_protocol)
     runner = TwinsRunner(rounds_of_protocol, args.path, FHSNode, [sync_storage], log_path=args.log)
 
     # how many failures in one scenario
-    runner.depth = 5
+    runner.depth = int(args.depth)
     # random seed
-    runner.seed = 1234567
+    runner.seed = int(args.seed)
 
     runner.run()

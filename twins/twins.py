@@ -13,7 +13,7 @@ class TwinsNetwork(Network):
     def quorum(self):
         sole_nodes = len(self.nodes) - self.num_of_twins
         f = (sole_nodes - 1) // 3
-        return sole_nodes - f - 2
+        return sole_nodes - f
 
     def send(self, fromx, tox, message):
         if fromx.round <= self.num_of_rounds:
