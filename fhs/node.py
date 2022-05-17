@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from scheduler.SaveStatue import *
+from scheduler.SaveState import *
 from sim.node import Node
 from sim.network import BColors, Network
 from fhs.messages import Message, Block, GenericVote, Vote, NewView
@@ -56,12 +56,12 @@ class FHSNode(Node):
                 block = Block(qc, self.round + 1, self.name)
                 # do not broadcast
                 # self.network.broadcast(self, block)
-                # do save node statue as a leader
-                temp_leader_statue = NodeStatue(self.round, self.name, self.highest_qc,
+                # do save node state as a leader
+                temp_leader_state = NodeState(self.round, self.name, self.highest_qc,
                                                 self.highest_qc_round, self.last_voted_round, self.preferred_round,
                                                 self.storage.committed, self.storage.votes, block)
                 if isinstance(self.network, Network):
-                    self.network.node_statues.node_statue_dict.setdefault(self.name, temp_leader_statue)
+                    self.network.node_states.node_state_dict.setdefault(self.name, temp_leader_state)
 
         else:
             assert False  # pragma: no cover
@@ -85,12 +85,12 @@ class FHSNode(Node):
             self.log(f'Sending vote {vote} to {next_leaders}')
             # do not vote
             # [self.network.send(self, x, vote) for x in next_leaders]
-            # do save node statue as a follower
-            temp_follower_statue = NodeStatue(self.round, self.name, self.highest_qc,
+            # do save node state as a follower
+            temp_follower_state = NodeState(self.round, self.name, self.highest_qc,
                                               self.highest_qc_round, self.last_voted_round, self.preferred_round,
                                               self.storage.committed, self.storage.votes, vote)
             if isinstance(self.network, Network):
-                self.network.node_statues.node_statue_dict.setdefault(self.name, temp_follower_statue)
+                self.network.node_states.node_state_dict.setdefault(self.name, temp_follower_state)
 
     def _process_qc(self, qc):
         self.log(f'Received QC {qc}', color=BColors.OK)

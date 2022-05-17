@@ -2,7 +2,7 @@ import json
 import sys
 from copy import deepcopy
 
-from scheduler.SaveStatue import *
+from scheduler.SaveState import *
 from sim.Contacts import Contacts
 
 sys.path += '../fhs'
@@ -55,7 +55,7 @@ class TwinsRunner:
     def run(self):
         self.safety_fail_num = 0
 
-        for i in range(3, self.num_of_rounds):
+        for i in range(3, self.num_of_rounds + 1):
             runner.run_one_round(i)
 
     def run_one_round(self, current_round):
@@ -71,24 +71,21 @@ class TwinsRunner:
         if current_round == 3:
             self.init_dict_set()
 
-        if current_round == 4:
-            print()
-
-        for j, phase_statue in enumerate(self.last_dict_set):
+        for j, phase_state in enumerate(self.last_dict_set):
             for i, failure in enumerate(self.failures):
-                self.init_network_nodes(network, phase_statue.node_statue_dict, current_round)
+                self.init_network_nodes(network, phase_state.node_state_dict, current_round)
                 # run one phase
                 network.failure = failure
                 network.env = simpy.Environment()
                 network.run(150, current_round)
                 # todo
-                self.new_dict_set.add(deepcopy(network.node_statues))
+                self.new_dict_set.add(deepcopy(network.node_states))
 
                 if self.log_path is not None:
-                    file_path = join(self.log_path, f'round-{current_round}-statue-{j}-failure-{i}.log')
+                    file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
                     self._print_log(file_path, network)
 
-                network.node_statues = PhaseStatue()
+                network.node_states = PhaseState()
                 network.trace = []
 
                 if i == 1:
@@ -97,13 +94,13 @@ class TwinsRunner:
         self.last_dict_set = self.new_dict_set
         self.new_dict_set = set()
 
-        # do sth with statue set
+        # do sth with state set
 
     def init_dict_set(self):
         self.last_dict_set = set()
-        self.last_dict_set.add(PhaseStatue())
+        self.last_dict_set.add(PhaseState())
 
-    def init_network_nodes(self, network, node_statue_dict, current_round):
+    def init_network_nodes(self, network, node_state_dict, current_round):
         nodes = [self.NodeClass(i, network, *self.node_args)
                  for i in range(self.num_of_nodes + self.num_of_twins)]
         [n.set_le(TwinsLE(n, network, [0, 4])) for n in nodes]
@@ -111,22 +108,21 @@ class TwinsRunner:
         if current_round == 3:
             return
         for x in network.nodes.values():
-            x_statue = node_statue_dict.get(x.name)
-            self.set_node_statue(x, x_statue)
+            x_state = node_state_dict.get(x.name)
+            self.set_node_state(x, x_state)
 
-    def set_node_statue(self, node, node_statue):
-        # follower may not save statue when it's a vote round
-        # A vote round change leader's statue
-        if node_statue is not None:
-            node.round = node_statue.round
-            node.highest_qc = node_statue.highest_qc
-            node.highest_qc_round = node_statue.highest_qc_round
-            node.last_voted_round = node_statue.last_voted_round
-            node.preferred_round = node_statue.preferred_round
-            node.storage.committed = node_statue.committed
-            node.storage.votes = node_statue.votes
-            node.message_to_send = node_statue.message_to_send
-
+    def set_node_state(self, node, node_state):
+        # follower may not save state when it's a vote round
+        # A vote round change leader's state
+        if node_state is not None:
+            node.round = node_state.round
+            node.highest_qc = node_state.highest_qc
+            node.highest_qc_round = node_state.highest_qc_round
+            node.last_voted_round = node_state.last_voted_round
+            node.preferred_round = node_state.preferred_round
+            node.storage.committed = deepcopy(node_state.committed)
+            node.storage.votes = deepcopy(node_state.votes)
+            node.message_to_send = node_state.message_to_send
 
     def _print_log(self, file_path, network):
         data = [f'Settings: {self.num_of_nodes} nodes, {self.num_of_twins} ']
@@ -140,7 +136,10 @@ class TwinsRunner:
                 if i != len(network.failure) - 1:
                     failures += ','
         data += [failures]
-        logging.info(f'Failures: {failures}')
+        if failures == '':
+            logging.info(f'Failures: None')
+        else:
+            logging.info(f'Failures: {failures}')
 
         data += [']\n']
 

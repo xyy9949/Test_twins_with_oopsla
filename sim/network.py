@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 
-from scheduler.SaveStatue import PhaseStatue
+from scheduler.SaveState import PhaseState
 
 
 class BColors:
@@ -24,7 +24,7 @@ class Network:
         self.trace = []
         self.model = model
         self.failure = None
-        self.node_statues = PhaseStatue()
+        self.node_states = PhaseState()
 
     @property
     def quorum(self):

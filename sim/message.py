@@ -30,3 +30,7 @@ class Message:
 
     def size(self):
         raise NotImplementedError  # pragma: no cover
+
+    def __hash__(self) -> int:
+        return super().__hash__()
+
