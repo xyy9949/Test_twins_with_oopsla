@@ -19,7 +19,7 @@ class Node():
     def set_le(self, le):
         self.le = le
 
-    def receive(self,fromx, tox, message, current_phase, failures):
+    def receive(self, fromx, tox, message, failure):
         """ Process received message.
 
         Args:
@@ -28,7 +28,7 @@ class Node():
         if isinstance(message, Message) and message.verify(self.network):
             raise NotImplementedError
 
-    def send(self):
+    def send(self, round):
         raise NotImplementedError
 
 

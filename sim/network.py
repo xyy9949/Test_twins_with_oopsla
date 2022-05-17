@@ -1,6 +1,8 @@
 import numpy as np
 import copy
 
+from scheduler.SaveStatue import PhaseStatue
+
 
 class BColors:
     # OK = '\033[92m'
@@ -21,10 +23,8 @@ class Network:
         self.env = env
         self.trace = []
         self.model = model
-        self.current_phase = None
-        self.current_round = None
-        self.failures = None
-        self.contacts = None
+        self.failure = None
+        self.node_statues = PhaseStatue()
 
     @property
     def quorum(self):
@@ -34,16 +34,10 @@ class Network:
     def add_node(self, node):
         self.nodes[node.name] = node
 
-    def run(self, until=50):
+    def run(self, until, current_round):
         assert len(self.nodes) > 0  # Don't forget to add nodes.
-        [self.env.process(n.send()) for n in self.nodes.values()]
+        [self.env.process(n.send(current_round)) for n in self.nodes.values()]
         self.env.run(until=until)
-
-    def can_save_round_statue(self, round):
-        for node in self.nodes.values():
-            if node.round <= round:
-                return False
-        return True
 
     def broadcast(self, fromx, message):
         for tox in self.nodes.values():
@@ -70,11 +64,8 @@ class Network:
         self.trace.append(entry)
         tox.log(entry, color=BColors.INFO)
         # Deliver messages.
-        if tox.receive(fromx, tox, message, self.current_phase, self.failures) == -1:
+        if tox.receive(fromx, tox, message, self.failure) == -1:
             self.trace.pop()
-        else:
-            # todo : save statue of tox
-            print()
 
     def print_trace(self, filter=None):
         print()

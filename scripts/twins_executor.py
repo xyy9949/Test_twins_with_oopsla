@@ -1,7 +1,8 @@
 import json
 import sys
+from copy import deepcopy
 
-from scheduler.SaveStatue import SaveStatue
+from scheduler.SaveStatue import *
 from sim.Contacts import Contacts
 
 sys.path += '../fhs'
@@ -32,6 +33,8 @@ class TwinsRunner:
         self.log_path = log_path
         self.NodeClass = NodeClass
         self.node_args = node_args
+        self.last_dict_set = set()
+        self.new_dict_set = set()
 
         with open(file_path) as f:
             data = load(f)
@@ -43,7 +46,6 @@ class TwinsRunner:
         self.num_of_rounds = num_of_rounds
         self.seed = None
         self.failures = None
-        self.current_phase = None
         logging.debug(f'Scenario file {args.path} successfully loaded.')
         logging.info(
             f'Settings: {self.num_of_nodes} nodes, {self.num_of_twins} twins, '
@@ -52,86 +54,95 @@ class TwinsRunner:
 
     def run(self):
         self.safety_fail_num = 0
-        # init StatueList
-        save_statue = SaveStatue(self.num_of_nodes - self.num_of_twins, 2 * self.num_of_twins)
 
-        for i, scenario in enumerate(self.scenarios):
-            self.current_phase = i
-            logging.info(f'Running scenario {i + 1}/{len(self.scenarios)}')
-            network = runner._run_scenario(scenario, i)
+        for i in range(3, self.num_of_rounds):
+            runner.run_one_round(i)
 
-            # init save_statue
+    def run_one_round(self, current_round):
+        # list of list
+        node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
+        self.failures = node_failure_setting.failures
 
-
-            # TODO：增加安全性检验：
-            self.safety_check = runner.check_safety(network)
-            if not self.safety_check:
-                self.safety_fail_num = self.safety_fail_num + 1
-
-            if self.log_path is not None:
-                file_path = join(self.log_path, f'{self.file_path}-{i + 1}.log')
-                runner._print_log(file_path, scenario, network)
-                logging.info(f'Log saved in {file_path}')
-
-        print(f'Safety check failure number: {self.safety_fail_num}\n')
-
-    def _run_scenario(self, scenario, current_scenario):
-        logging.debug('1/3 Reading scenario.')
-        round_leaders = scenario['round_leaders']
-        firewall = scenario['firewall'] if 'firewall' in scenario else {}
-
-        logging.debug('2/3 Setting up network.')
-        env = simpy.Environment()
         model = SyncModel()
         network = TwinsNetwork(
-            env, model, firewall, self.num_of_twins, self.num_of_rounds
+            None, model, self.num_of_twins, self.num_of_rounds
         )
 
-        """ 重新对该scenario注入failure """
-        self.seed = self.seed + 1
-        failure_settings = NodeFailureSettings(self.num_of_rounds, current_scenario, self.num_of_nodes + self.num_of_twins, self.depth,
-                                               self.seed)
-        self.failures = failure_settings.failures
-        network.current_phase = current_scenario
-        network.failures = self.failures
+        if current_round == 3:
+            self.init_dict_set()
 
-        """ 改正了原版代码的错误 self.num_of_nodes --> self.num_of_nodes + self.num_of_twins """
+        if current_round == 4:
+            print()
+
+        for j, phase_statue in enumerate(self.last_dict_set):
+            for i, failure in enumerate(self.failures):
+                self.init_network_nodes(network, phase_statue.node_statue_dict, current_round)
+                # run one phase
+                network.failure = failure
+                network.env = simpy.Environment()
+                network.run(150, current_round)
+                # todo
+                self.new_dict_set.add(deepcopy(network.node_statues))
+
+                if self.log_path is not None:
+                    file_path = join(self.log_path, f'round-{current_round}-statue-{j}-failure-{i}.log')
+                    self._print_log(file_path, network)
+
+                network.node_statues = PhaseStatue()
+                network.trace = []
+
+                if i == 1:
+                    break
+
+        self.last_dict_set = self.new_dict_set
+        self.new_dict_set = set()
+
+        # do sth with statue set
+
+    def init_dict_set(self):
+        self.last_dict_set = set()
+        self.last_dict_set.add(PhaseStatue())
+
+    def init_network_nodes(self, network, node_statue_dict, current_round):
         nodes = [self.NodeClass(i, network, *self.node_args)
                  for i in range(self.num_of_nodes + self.num_of_twins)]
-        [n.set_le(TwinsLE(n, network, round_leaders)) for n in nodes]
+        [n.set_le(TwinsLE(n, network, [0, 4])) for n in nodes]
         [network.add_node(n) for n in nodes]
-        for n in nodes:
-            n.current_phase = current_scenario
+        if current_round == 3:
+            return
+        for x in network.nodes.values():
+            x_statue = node_statue_dict.get(x.name)
+            self.set_node_statue(x, x_statue)
 
-        # set pseudonym for nodes
-        # compromised = [0]
-        # compromised = scenario['compromised']
-        # network.contacts = Contacts(compromised, self.num_of_nodes)
-        # network.contacts.set_pseudonym(nodes, self.num_of_nodes)
+    def set_node_statue(self, node, node_statue):
+        # follower may not save statue when it's a vote round
+        # A vote round change leader's statue
+        if node_statue is not None:
+            node.round = node_statue.round
+            node.highest_qc = node_statue.highest_qc
+            node.highest_qc_round = node_statue.highest_qc_round
+            node.last_voted_round = node_statue.last_voted_round
+            node.preferred_round = node_statue.preferred_round
+            node.storage.committed = node_statue.committed
+            node.storage.votes = node_statue.votes
+            node.message_to_send = node_statue.message_to_send
 
-        logging.debug(f'3/3 Executing scenario ({len(round_leaders)} rounds).')
-        network.run(until=150)
-        return network
 
-    def _print_log(self, file_path, scenario, network):
+    def _print_log(self, file_path, network):
         data = [f'Settings: {self.num_of_nodes} nodes, {self.num_of_twins} ']
-        data += [f'twins, and {len(scenario["round_leaders"])} rounds.']
+        data += [f'twins, and {self.num_of_rounds} rounds.']
 
-        # TODO:增加安全性检验的结果：
-        data += [f'\n\nSafety check result: {self.safety_check}\n']
-        data += [f'\nSafety check failure number: {self.safety_fail_num}\n']
-
-        data += ['\n\nScenario:\n']
-        data += [dumps(scenario)]
-
-        data += ['\n\nfailures:\n']
+        data += ['\n\nfailures:\n[']
         failures = ''
-        for failure in self.failures:
-            if isinstance(failure, NodeFailure):
-                failures += '   '
-                failures += failure.__str__()
+        for i, fai in enumerate(network.failure):
+            if isinstance(fai, NodeFailure):
+                failures += fai.__str__()
+                if i != len(network.failure) - 1:
+                    failures += ','
         data += [failures]
         logging.info(f'Failures: {failures}')
+
+        data += [']\n']
 
         data += ['\n\nNetwork logs:\n']
         data += [f'{t}\n' for t in network.trace] + ['\n']

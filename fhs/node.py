@@ -1,6 +1,8 @@
-from scheduler.SaveStatue import NodeStatue, RoundStatue
+from copy import deepcopy
+
+from scheduler.SaveStatue import *
 from sim.node import Node
-from sim.network import BColors
+from sim.network import BColors, Network
 from fhs.messages import Message, Block, GenericVote, Vote, NewView
 from fhs.storage import NodeStorage, SyncStorage
 import logging
@@ -11,7 +13,6 @@ class FHSNode(Node):
 
     def __init__(self, name, network, sync_storage):
         super().__init__(name, network)
-        self.current_phase = None
         self.timeout = self.DELAY
         self.round = 3
         self.last_voted_round = 2
@@ -25,13 +26,14 @@ class FHSNode(Node):
 
         # Node store (each node has its own).
         self.storage = NodeStorage(self)
+        self.message_to_send = None
 
-    def receive(self, fromx, tox, message, current_phase, failures):
+    def receive(self, fromx, tox, message, failure):
         """ Handles incoming messages. """
         current_round = message.round
 
         # drop message
-        if message.is_to_drop(fromx, tox, current_round, current_phase, failures):
+        if message.is_to_drop(fromx, tox, failure):
             if self.name == fromx.name or self.name == tox.name:
                 logging.info(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
                 self.log(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
@@ -52,11 +54,14 @@ class FHSNode(Node):
             if qc is not None:
                 self._process_block(qc.block(self.sync_storage))
                 block = Block(qc, self.round + 1, self.name)
-                self.network.broadcast(self, block)
+                # do not broadcast
+                # self.network.broadcast(self, block)
                 # do save node statue as a leader
-                temp_leader_statue = NodeStatue(self.round + 1, self.name, self.highest_qc.__repr__,
+                temp_leader_statue = NodeStatue(self.round, self.name, self.highest_qc,
                                                 self.highest_qc_round, self.last_voted_round, self.preferred_round,
-                                                self.storage.committed, self.storage.votes)
+                                                self.storage.committed, self.storage.votes, block)
+                if isinstance(self.network, Network):
+                    self.network.node_statues.node_statue_dict.setdefault(self.name, temp_leader_statue)
 
         else:
             assert False  # pragma: no cover
@@ -65,7 +70,7 @@ class FHSNode(Node):
         prev_block = block.qc.block(self.sync_storage)
 
         # Check if we can vote for the block.
-        check = block.author in self.le.get_leader()
+        check = block.author in [0, 4]
         check &= block.round > self.last_voted_round
         check &= prev_block.round >= self.preferred_round
         if check:
@@ -78,11 +83,14 @@ class FHSNode(Node):
             indeces = self.le.get_leader(round=block.round + 1)
             next_leaders = [self.network.nodes[x] for x in indeces]
             self.log(f'Sending vote {vote} to {next_leaders}')
-            [self.network.send(self, x, vote) for x in next_leaders]
+            # do not vote
+            # [self.network.send(self, x, vote) for x in next_leaders]
             # do save node statue as a follower
-            temp_follower_statue = NodeStatue(self.round, self.name, self.highest_qc.__repr__,
+            temp_follower_statue = NodeStatue(self.round, self.name, self.highest_qc,
                                               self.highest_qc_round, self.last_voted_round, self.preferred_round,
-                                              self.storage.committed, self.storage.votes)
+                                              self.storage.committed, self.storage.votes, vote)
+            if isinstance(self.network, Network):
+                self.network.node_statues.node_statue_dict.setdefault(self.name, temp_follower_statue)
 
     def _process_qc(self, qc):
         self.log(f'Received QC {qc}', color=BColors.OK)
@@ -104,27 +112,26 @@ class FHSNode(Node):
         self.storage.commit(b0)
         self.log(f'Committing {b0}', color=BColors.OK)
 
-    def send(self):
+    def is_leader(self):
+        if self.name in [0, 4]:
+            return True
+        else:
+            return False
+
+    def send(self, current_round):
         """ Main loop triggering timeouts. """
 
-        # Send the very first block.
-        if self.name in self.le.get_leader():
+        if self.is_leader() and current_round == 3:
             block = Block(self.highest_qc, self.round, self.name)
             self.network.broadcast(self, block)
-
-        # Trigger timeouts when necessary.
+        elif self.is_leader() and current_round % 2 == 1:
+            block = self.message_to_send
+            self.network.broadcast(self, block)
+        elif current_round % 2 == 0:
+            # follower send vote
+            vote = self.message_to_send
+            self.log(f'Sending vote {vote} to {[0, 4]}')
+            next_leaders = [self.network.nodes[x] for x in [0, 4]]
+            [self.network.send(self, x, vote) for x in next_leaders]
         while True:
-            yield self.network.env.timeout(1)
-            self.timeout -= 1
-            if self.timeout == 0:
-                self.log(
-                    f'Timing out! (round {self.round})', color=BColors.WARNING
-                )
-                # 隔了一个发送bk的round
-                self.round += 2
-                self.timeout = self.DELAY
-                vote = NewView(self.highest_qc, self.round, self.name)
-                indeces = self.le.get_leader()
-                next_leaders = [self.network.nodes[x] for x in indeces]
-                [self.network.send(self, x, vote) for x in next_leaders]
-                self.log(f'Sending new view {vote} to {next_leaders}')
+            yield self.network.env.timeout(1000)

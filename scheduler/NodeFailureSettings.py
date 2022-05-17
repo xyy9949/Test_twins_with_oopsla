@@ -1,73 +1,54 @@
-import random
+import math
 
 
 class NodeFailureSettings:
-    def __init__(self, num_rounds_in_protocol, current_scenario, num_processes, depth, seed):
-        self.num_rounds_in_protocol = num_rounds_in_protocol
-        """ 这里的phase就是scenario """
-        # self.num_phases = num_phases
-        self.current_phase = current_scenario
-        self.num_processes = num_processes
-        self.num_majority = num_processes / 2 + 1
-
-        self.seed = seed
-        self.rand = random.Random(seed)
-        self.depth = depth # self.rand.randint(0, depth)
-        self.failures = self.getRandomFailures()
+    def __init__(self, num_of_processes, num_of_leaders, current_round):
+        self.current_round = current_round
+        self.num_of_processes = num_of_processes
+        self.num_of_leaders = num_of_leaders  # 2
+        self.bin_num_len = num_of_leaders * num_of_processes
         """ 最多生成depth个failure """
+        self.depth = int(math.pow(2, self.bin_num_len))
+        self.failures = self.get_failures()
 
+    def get_random_failures(self):
+        pass
 
-    def getRandomFailures(self):
-        if self.depth > 0:
-            return self.getBoundedRandomFailures(self.depth)
-        else:
-            return self.getUnboundedRandomFailures()
+    def get_failures(self):
+        failures = []
+        for failure_num in range(self.depth):
+            failure = []
+            bin_num = bin(failure_num).removeprefix('0b')
+            for j in range(self.bin_num_len - len(bin_num)):
+                bin_num = '0' + bin_num
+            for i in range(self.bin_num_len):
+                flag = bin_num[i]
+                if flag == '1':
+                    if self.current_round % 2 == 1:
+                        # send round
+                        sender = int(i / self.num_of_processes)
+                        if sender > 0:
+                            sender = 4
+                        failure.append(
+                            NodeFailure(sender,
+                                        i % self.num_of_processes))
+                    else:
+                        # vote round
+                        receiver = int(i / self.num_of_processes)
+                        if receiver > 0:
+                            sender = 4
+                        failure.append(
+                            NodeFailure(i % self.num_of_processes,
+                                        receiver))
+            failures.append(failure)
 
-    def getBoundedRandomFailures(self, depth):
-        f = []
-        round_process = []
-        for i in range(self.num_rounds_in_protocol):
-            for j in range(self.num_processes):
-                round_process.append((i, j))
+        return failures
 
-        # for i in range(depth):
-        #     # no use for failures at round 1 or 2
-        #     failure_start_at = 2 * self.num_processes
-        #     if failure_start_at == len(round_process) - 1:
-        #         break
-        #     failureAt = self.rand.randint(failure_start_at, len(round_process) - 1)
-        #     roundToFail = round_process[failureAt][0]
-        #     processToFail = round_process[failureAt][1]
-        #     del round_process[failureAt]
-        #     nodeFailure = NodeFailure(self.current_phase, roundToFail + 1, processToFail)
-        #     f.append(nodeFailure)
-        #     i += 1
-
-        # -1 means all nodes
-        f.append(NodeFailure(self.current_phase, 3, -1, 4))
-        f.append(NodeFailure(self.current_phase, 3, 4, -1))
-
-        f.append(NodeFailure(self.current_phase, 4, -1, 3))
-        f.append(NodeFailure(self.current_phase, 4, 3, -1))
-        f.append(NodeFailure(self.current_phase, 5, -1, 3))
-        f.append(NodeFailure(self.current_phase, 5, 3, -1))
-
-        f.append(NodeFailure(self.current_phase, 6, -1, 1))
-        f.append(NodeFailure(self.current_phase, 6, 1, -1))
-        f.append(NodeFailure(self.current_phase, 7, -1, 1))
-        f.append(NodeFailure(self.current_phase, 7, 1, -1))
-        return f
-
-
-    def getUnboundedRandomFailures(self):
-        return []
 
 class NodeFailure:
-    def __init__(self, k, r, sender, receiver):
-        self.k = k
-        self.r = r
+    def __init__(self, sender, receiver):
         self.sender = sender
         self.receiver = receiver
 
     def __str__(self):
-        return f'failure (k:{self.k}, r:{self.r}, sender:{self.sender}, receiver:{self.receiver})'
+        return f'failure (sender:{self.sender}, receiver:{self.receiver})'

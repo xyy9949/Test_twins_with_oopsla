@@ -28,10 +28,6 @@ class Block(Message):
     def for_sort(self):
         return f'Block(round:{self.round}, author:{self.author}, content:{self.qc})'
 
-    def __eq__(self, other):
-        if self.author == other.author and self.round == other.round and self.qc == other.qc:
-            return True
-        return False
 
 # --- Votes ---
 
@@ -54,11 +50,6 @@ class Vote(GenericVote):
 
     def __repr__(self):
         return f'V(Node{self.author}, {self.block_hash})'
-
-    def __eq__(self, other):
-        if self.author == other.author and self.block_hash == other.block_hash:
-            return True
-        return False
 
 
 class NewView(GenericVote):
@@ -109,11 +100,6 @@ class QC(GenericQC):
 
     def __repr__(self):
         return f'QC({next(iter(self.votes)).block_hash})'
-
-    def __eq__(self, other):
-        if self.votes == other.votes:
-            return True
-        return False
 
 
 class AggQC(GenericQC):

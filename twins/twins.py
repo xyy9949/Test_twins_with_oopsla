@@ -3,9 +3,8 @@ from sim.leader_election import LeaderElection
 
 
 class TwinsNetwork(Network):
-    def __init__(self, env, model, firewall, num_of_twins, num_of_rounds):
+    def __init__(self, env, model, num_of_twins, num_of_rounds):
         super().__init__(env, model)
-        self.firewall = firewall
         self.num_of_twins = num_of_twins
         self.num_of_rounds = num_of_rounds
 
