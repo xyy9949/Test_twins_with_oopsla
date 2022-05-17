@@ -36,7 +36,7 @@ class NodeFailureSettings:
                         # vote round
                         receiver = int(i / self.num_of_processes)
                         if receiver > 0:
-                            sender = 4
+                            receiver = 4
                         failure.append(
                             NodeFailure(i % self.num_of_processes,
                                         receiver))
