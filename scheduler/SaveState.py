@@ -3,11 +3,31 @@ class PhaseState:
         self.node_state_dict = dict()
 
     def __eq__(self, other):
-        if self.node_state_dict.get(0) == other.node_state_dict.get(0) \
-            and self.node_state_dict.get(1) == other.node_state_dict.get(1) \
-                and self.node_state_dict.get(2) == other.node_state_dict.get(2) \
-                and self.node_state_dict.get(3) == other.node_state_dict.get(3) \
-                and self.node_state_dict.get(4) == other.node_state_dict.get(4):
+        if self.node_state_dict.get(0) is None and other.node_state_dict.get(0) is not None:
+            return False
+        if self.node_state_dict.get(1) is None and other.node_state_dict.get(1) is not None:
+            return False
+        if self.node_state_dict.get(2) is None and other.node_state_dict.get(2) is not None:
+            return False
+        if self.node_state_dict.get(3) is None and other.node_state_dict.get(3) is not None:
+            return False
+        if self.node_state_dict.get(4) is None and other.node_state_dict.get(4) is not None:
+            return False
+        if self.node_state_dict.get(0) is not None and other.node_state_dict.get(0) is None:
+            return False
+        if self.node_state_dict.get(1) is not None and other.node_state_dict.get(1) is None:
+            return False
+        if self.node_state_dict.get(2) is not None and other.node_state_dict.get(2) is None:
+            return False
+        if self.node_state_dict.get(3) is not None and other.node_state_dict.get(3) is None:
+            return False
+        if self.node_state_dict.get(4) is not None and other.node_state_dict.get(4) is None:
+            return False
+        if (self.node_state_dict.get(0) == other.node_state_dict.get(0) or (self.node_state_dict.get(0) is None and other.node_state_dict.get(0) is None)) \
+            and (self.node_state_dict.get(1) == other.node_state_dict.get(1) or (self.node_state_dict.get(1) is None and other.node_state_dict.get(1) is None))\
+                and (self.node_state_dict.get(2) == other.node_state_dict.get(2) or (self.node_state_dict.get(2) is None and other.node_state_dict.get(2) is None)) \
+                and (self.node_state_dict.get(3) == other.node_state_dict.get(3) or (self.node_state_dict.get(3) is None and other.node_state_dict.get(3) is None)) \
+                and (self.node_state_dict.get(4) == other.node_state_dict.get(4) or (self.node_state_dict.get(4) is None and other.node_state_dict.get(4) is None)):
             return True
         else:
             return False

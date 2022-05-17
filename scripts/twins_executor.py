@@ -57,6 +57,8 @@ class TwinsRunner:
 
         for i in range(3, self.num_of_rounds + 1):
             runner.run_one_round(i)
+            if i == 3:
+                break
 
     def run_one_round(self, current_round):
         # list of list
@@ -89,10 +91,6 @@ class TwinsRunner:
 
                 network.node_states = PhaseState()
                 network.trace = []
-
-                # todo
-                if i == 1:
-                    break
 
         self.last_dict_set = self.new_dict_set
         self.new_dict_set = set()
