@@ -32,13 +32,15 @@ class NodeState:
 
     def __eq__(self, other):
         if self.node_name == other.node_name and \
-                self.highest_qc == other.highest_qc and \
+                list(sorted(self.highest_qc.votes, key=lambda x: x.author)) == \
+                list(sorted(other.highest_qc.votes, key=lambda x: x.author)) and \
                 self.highest_qc_round == other.highest_qc_round and \
-                self.last_voted_round == other.lasted_voted_round and \
+                self.last_voted_round == other.last_voted_round and \
                 self.preferred_round == other.preferred_round and \
-                self.committed == other.committed and \
                 self.votes == other.votes and \
-                self.message_to_send == other.message_to_send:
+                self.message_to_send == other.message_to_send and \
+                list(sorted(self.committed, key=lambda x: x.for_sort())) == \
+                list(sorted(self.committed, key=lambda x: x.for_sort())):
             return True
         else:
             return False

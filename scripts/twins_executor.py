@@ -79,7 +79,9 @@ class TwinsRunner:
                 network.env = simpy.Environment()
                 network.run(150, current_round)
                 # todo
-                self.new_dict_set.add(deepcopy(network.node_states))
+                new_phase_state = deepcopy(network.node_states)
+                if self.duplicate_checking(new_phase_state) is False:
+                    self.new_dict_set.add(new_phase_state)
 
                 if self.log_path is not None:
                     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
@@ -88,13 +90,19 @@ class TwinsRunner:
                 network.node_states = PhaseState()
                 network.trace = []
 
+                # todo
                 if i == 1:
                     break
 
         self.last_dict_set = self.new_dict_set
         self.new_dict_set = set()
 
-        # do sth with state set
+    def duplicate_checking(self, new_phase_state):
+        for x in self.new_dict_set:
+            if x == new_phase_state:
+                return True
+        else:
+            return False
 
     def init_dict_set(self):
         self.last_dict_set = set()
