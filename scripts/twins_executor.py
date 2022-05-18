@@ -57,7 +57,7 @@ class TwinsRunner:
 
         for i in range(3, self.num_of_rounds + 1):
             runner.run_one_round(i)
-            if i == 3:
+            if i == 4:
                 break
 
     def run_one_round(self, current_round):
@@ -80,7 +80,6 @@ class TwinsRunner:
                 network.failure = failure
                 network.env = simpy.Environment()
                 network.run(150, current_round)
-                # todo
                 new_phase_state = deepcopy(network.node_states)
                 if self.duplicate_checking(new_phase_state) is False:
                     self.new_dict_set.add(new_phase_state)
@@ -93,6 +92,7 @@ class TwinsRunner:
                 network.trace = []
 
         self.last_dict_set = self.new_dict_set
+        self._print_state_num(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
         self.new_dict_set = set()
 
     def duplicate_checking(self, new_phase_state):
@@ -129,6 +129,14 @@ class TwinsRunner:
             node.storage.committed = deepcopy(node_state.committed)
             node.storage.votes = deepcopy(node_state.votes)
             node.message_to_send = node_state.message_to_send
+
+    def _print_state_num(self, file_path):
+        num = len(self.new_dict_set)
+        state_list = list(self.new_dict_set)
+        data = [f'All phases of this round end, generated {num} states.\n\nThey are :\n\n']
+        with open(file_path, 'w') as f:
+            f.write(''.join(data))
+
 
     def _print_log(self, file_path, network):
         data = [f'Settings: {self.num_of_nodes} nodes, {self.num_of_twins} ']

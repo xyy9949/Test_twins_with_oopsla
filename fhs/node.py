@@ -124,10 +124,10 @@ class FHSNode(Node):
         if self.is_leader() and current_round == 3:
             block = Block(self.highest_qc, self.round, self.name)
             self.network.broadcast(self, block)
-        elif self.is_leader() and current_round % 2 == 1:
+        elif self.is_leader() and current_round % 2 == 1 and self.message_to_send is not None:
             block = self.message_to_send
             self.network.broadcast(self, block)
-        elif current_round % 2 == 0:
+        elif current_round % 2 == 0 and self.message_to_send is not None:
             # follower send vote
             vote = self.message_to_send
             self.log(f'Sending vote {vote} to {[0, 4]}')
