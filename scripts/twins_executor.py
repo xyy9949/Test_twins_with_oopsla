@@ -68,7 +68,7 @@ class TwinsRunner:
         for i in range(3, self.num_of_rounds + 1):
             runner.run_one_round(i, network)
             # todo
-            if i == 4:
+            if i == 3:
                 break
 
     def run_one_round(self, current_round, network):
@@ -79,7 +79,7 @@ class TwinsRunner:
         if current_round == 3:
             self.init_dict_set()
 
-        for j, phase_state in enumerate(self.last_dict_set):
+        for j, phase_state in enumerate(self.last_dict_set.values()):
             for i, failure in enumerate(self.failures):
                 self.init_network_nodes(network, phase_state.node_state_dict, current_round)
                 # run one phase
@@ -109,8 +109,9 @@ class TwinsRunner:
             return False
 
     def init_dict_set(self):
-        self.last_dict_set = set()
-        self.last_dict_set.add(PhaseState())
+        self.last_dict_set = dict()
+        ps = PhaseState()
+        self.last_dict_set.setdefault(ps.__str__(),PhaseState())
 
     def init_network_nodes(self, network, node_state_dict, current_round):
         if current_round == 3:
@@ -137,7 +138,7 @@ class TwinsRunner:
 
     def _print_state(self, file_path):
         phase_state_set = self.new_dict_set
-        phase_state_list = list(phase_state_set)
+        phase_state_list = list(phase_state_set.values())
         num = len(self.new_dict_set)
         data = [f'All phases of this round end, generated {num} states.\n\nThey are :\n\n']
         dicts = ''
