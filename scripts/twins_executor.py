@@ -55,28 +55,29 @@ class TwinsRunner:
     def run(self):
         self.safety_fail_num = 0
 
-        for i in range(3, self.num_of_rounds + 1):
-            runner.run_one_round(i)
-            if i == 3:
-                break
-
-    def run_one_round(self, current_round):
-        # list of list
-        node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
-        self.failures = node_failure_setting.failures
-
         model = SyncModel()
         network = TwinsNetwork(
             None, model, self.num_of_twins, self.num_of_rounds
         )
 
-        if current_round == 3:
-            self.init_dict_set()
-
         nodes = [self.NodeClass(i, network, *self.node_args)
                  for i in range(self.num_of_nodes + self.num_of_twins)]
         [n.set_le(TwinsLE(n, network, [0, 4])) for n in nodes]
         [network.add_node(n) for n in nodes]
+
+        for i in range(3, self.num_of_rounds + 1):
+            runner.run_one_round(i, network)
+            # todo
+            if i == 3:
+                break
+
+    def run_one_round(self, current_round, network):
+        # list of list
+        node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
+        self.failures = node_failure_setting.failures
+
+        if current_round == 3:
+            self.init_dict_set()
 
         for j, phase_state in enumerate(self.last_dict_set):
             for i, failure in enumerate(self.failures):
@@ -97,7 +98,7 @@ class TwinsRunner:
                 network.trace = []
 
         self.last_dict_set = self.new_dict_set
-        self._print_state_num(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
+        self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
         self.new_dict_set = set()
 
     def duplicate_checking(self, new_phase_state):
@@ -131,10 +132,12 @@ class TwinsRunner:
             node.storage.votes = deepcopy(node_state.votes)
             node.message_to_send = node_state.message_to_send
 
-    def _print_state_num(self, file_path):
+    def _print_state(self, file_path):
+        new_dict_set = self.new_dict_set
         num = len(self.new_dict_set)
         state_list = list(self.new_dict_set)
         data = [f'All phases of this round end, generated {num} states.\n\nThey are :\n\n']
+
         with open(file_path, 'w') as f:
             f.write(''.join(data))
 
