@@ -114,6 +114,9 @@ class TwinsRunner:
 
     def init_network_nodes(self, network, node_state_dict, current_round):
         if current_round == 3:
+            for x in network.nodes.values():
+                x.last_voted_round = 2
+                x.round = 3
             return
         for x in network.nodes.values():
             x_state = node_state_dict.get(x.name)
