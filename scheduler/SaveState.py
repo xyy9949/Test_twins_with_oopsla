@@ -35,6 +35,13 @@ class PhaseState:
     def __hash__(self) -> int:
         return super().__hash__()
 
+    def __str__(self) -> str:
+        return self.node_state_dict.get(0).__str__()\
+               + ',' + self.node_state_dict.get(1).__str__()\
+               + ',' + self.node_state_dict.get(2).__str__()\
+               + ',' + self.node_state_dict.get(3).__str__()\
+               + ',' + self.node_state_dict.get(4).__str__()
+
 
 class NodeState:
     def __init__(self, round, node_name, highest_qc, highest_qc_round, last_voted_round, preferred_round,
@@ -64,3 +71,11 @@ class NodeState:
             return True
         else:
             return False
+
+    def __str__(self):
+        return f'NodeState(name:{self.node_name}, round:{self.round}, highest_qc:{self.highest_qc}, ' \
+               f'highest_qc_round:{self.highest_qc_round}, last_voted_round:{self.last_voted_round}, ' \
+               f'preferred_round:{self.preferred_round}, committed:{self.committed}, votes:{self.votes}, ' \
+               f'message_to_send:{self.message_to_send})'
+
+

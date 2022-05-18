@@ -133,14 +133,19 @@ class TwinsRunner:
             node.message_to_send = node_state.message_to_send
 
     def _print_state(self, file_path):
-        new_dict_set = self.new_dict_set
+        phase_state_set = self.new_dict_set
+        phase_state_list = list(phase_state_set)
         num = len(self.new_dict_set)
-        state_list = list(self.new_dict_set)
         data = [f'All phases of this round end, generated {num} states.\n\nThey are :\n\n']
-
+        dicts = ''
+        for i, phase_state in enumerate(phase_state_list):
+            if isinstance(phase_state.node_state_dict, dict):
+                dicts += phase_state.__str__()
+                if i != len(phase_state_list) - 1:
+                    dicts += ';\n'
+        data += [dicts]
         with open(file_path, 'w') as f:
             f.write(''.join(data))
-
 
     def _print_log(self, file_path, network):
         data = [f'Settings: {self.num_of_nodes} nodes, {self.num_of_twins} ']
