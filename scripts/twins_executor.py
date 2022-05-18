@@ -21,6 +21,7 @@ from twins.twins import TwinsNetwork, TwinsLE
 from sim.network import SyncModel
 from scheduler.NodeFailureSettings import NodeFailureSettings
 from scheduler.NodeFailureSettings import NodeFailure
+import ast
 from streamlet.node import StreamletNode
 
 
@@ -68,8 +69,8 @@ class TwinsRunner:
         for i in range(3, self.num_of_rounds + 1):
             runner.run_one_round(i, network)
             # todo
-            if i == 4:
-                break
+            # if i == 4:
+            #     break
 
     def run_one_round(self, current_round, network):
         # list of list
@@ -79,28 +80,51 @@ class TwinsRunner:
         if current_round == 3:
             self.init_dict_set()
 
-        for j, phase_state in enumerate(self.last_dict_set):
-            for i, failure in enumerate(self.failures):
-                self.init_network_nodes(network, phase_state.node_state_dict, current_round)
-                # run one phase
-                network.failure = failure
-                network.env = simpy.Environment()
-                network.run(150, current_round)
-                new_phase_state = deepcopy(network.node_states)
-                if self.duplicate_checking(new_phase_state) is False:
-                    self.new_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
-
-                if self.log_path is not None:
-                    file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
-                    self._print_log(file_path, network)
-                logging.info(f'round-{current_round}-state-{j}-failure-{i} finished.')
-
-                network.node_states = PhaseState()
-                network.trace = []
-
-        self.last_dict_set = self.new_dict_set
-        self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
         self.new_dict_set = dict()
+
+        if current_round == 3:
+            for j, phase_state in enumerate(self.last_dict_set):
+                for i, failure in enumerate(self.failures):
+                    self.init_network_nodes(network, phase_state.node_state_dict, current_round)
+                    # run one phase
+                    network.failure = failure
+                    network.env = simpy.Environment()
+                    network.run(150, current_round)
+                    new_phase_state = deepcopy(network.node_states)
+                    if self.duplicate_checking(new_phase_state) is False:
+                        self.new_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
+
+                    # if self.log_path is not None:
+                    #     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
+                    #     self._print_log(file_path, network)
+                    logging.info(f'round-{current_round}-state-{j}-failure-{i} finished.')
+
+                    network.node_states = PhaseState()
+                    network.trace = []
+        else:
+            j = 0
+            for phase_state in self.last_dict_set.values():
+                for i, failure in enumerate(self.failures):
+                    self.init_network_nodes(network, phase_state.node_state_dict, current_round)
+                    # run one phase
+                    network.failure = failure
+                    network.env = simpy.Environment()
+                    network.run(150, current_round)
+                    new_phase_state = deepcopy(network.node_states)
+                    if self.duplicate_checking(new_phase_state) is False:
+                        self.new_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
+
+                    # if self.log_path is not None:
+                    #     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
+                    #     self._print_log(file_path, network)
+                    logging.info(f'round-{current_round}-state-{j}-failure-{i} finished.')
+
+                    network.node_states = PhaseState()
+                    network.trace = []
+                j = j + 1
+        self.last_dict_set = self.new_dict_set
+        # self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
+
 
     def duplicate_checking(self, new_phase_state):
         if self.new_dict_set.get(new_phase_state.__str__()) is not None:
