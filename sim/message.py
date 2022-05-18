@@ -10,14 +10,12 @@ class Message:
     def set_receiver(self, receiver):
         self.receiver = receiver
 
-    def is_to_drop(self, fromx, tox, failure):
+    def is_to_drop(self, fromx, tox, failure_list):
         sender_name = fromx.name
         receiver_name = tox.name
-        if sender_name == receiver_name:
-            return False
         sender = None
         receiver = None
-        for i, setting in enumerate(failure):
+        for i, setting in enumerate(failure_list):
             if isinstance(setting, NodeFailure):
                 sender = setting.sender
                 receiver = setting.receiver
