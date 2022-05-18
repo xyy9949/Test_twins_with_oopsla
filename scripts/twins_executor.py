@@ -68,7 +68,7 @@ class TwinsRunner:
         for i in range(3, self.num_of_rounds + 1):
             runner.run_one_round(i, network)
             # todo
-            if i == 3:
+            if i == 4:
                 break
 
     def run_one_round(self, current_round, network):
@@ -90,9 +90,9 @@ class TwinsRunner:
                 if self.duplicate_checking(new_phase_state) is False:
                     self.new_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
 
-                if self.log_path is not None:
-                    file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
-                    self._print_log(file_path, network)
+                # if self.log_path is not None:
+                #     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
+                #     self._print_log(file_path, network)
                 logging.info(f'round-{current_round}-state-{j}-failure-{i} finished.')
 
                 network.node_states = PhaseState()

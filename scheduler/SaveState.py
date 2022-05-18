@@ -23,11 +23,16 @@ class PhaseState:
             return False
         if self.node_state_dict.get(4) is not None and other.node_state_dict.get(4) is None:
             return False
-        if (self.node_state_dict.get(0) == other.node_state_dict.get(0) or (self.node_state_dict.get(0) is None and other.node_state_dict.get(0) is None)) \
-            and (self.node_state_dict.get(1) == other.node_state_dict.get(1) or (self.node_state_dict.get(1) is None and other.node_state_dict.get(1) is None))\
-                and (self.node_state_dict.get(2) == other.node_state_dict.get(2) or (self.node_state_dict.get(2) is None and other.node_state_dict.get(2) is None)) \
-                and (self.node_state_dict.get(3) == other.node_state_dict.get(3) or (self.node_state_dict.get(3) is None and other.node_state_dict.get(3) is None)) \
-                and (self.node_state_dict.get(4) == other.node_state_dict.get(4) or (self.node_state_dict.get(4) is None and other.node_state_dict.get(4) is None)):
+        if (self.node_state_dict.get(0) == other.node_state_dict.get(0) or (
+                self.node_state_dict.get(0) is None and other.node_state_dict.get(0) is None)) \
+                and (self.node_state_dict.get(1) == other.node_state_dict.get(1) or (
+                self.node_state_dict.get(1) is None and other.node_state_dict.get(1) is None)) \
+                and (self.node_state_dict.get(2) == other.node_state_dict.get(2) or (
+                self.node_state_dict.get(2) is None and other.node_state_dict.get(2) is None)) \
+                and (self.node_state_dict.get(3) == other.node_state_dict.get(3) or (
+                self.node_state_dict.get(3) is None and other.node_state_dict.get(3) is None)) \
+                and (self.node_state_dict.get(4) == other.node_state_dict.get(4) or (
+                self.node_state_dict.get(4) is None and other.node_state_dict.get(4) is None)):
             return True
         else:
             return False
@@ -36,10 +41,10 @@ class PhaseState:
         return super().__hash__()
 
     def __str__(self) -> str:
-        return self.node_state_dict.get(0).__str__()\
-               + ',' + self.node_state_dict.get(1).__str__()\
-               + ',' + self.node_state_dict.get(2).__str__()\
-               + ',' + self.node_state_dict.get(3).__str__()\
+        return self.node_state_dict.get(0).__str__() \
+               + ',' + self.node_state_dict.get(1).__str__() \
+               + ',' + self.node_state_dict.get(2).__str__() \
+               + ',' + self.node_state_dict.get(3).__str__() \
                + ',' + self.node_state_dict.get(4).__str__()
 
 
@@ -75,7 +80,13 @@ class NodeState:
     def __str__(self):
         return f'NodeState(name:{self.node_name}, round:{self.round}, highest_qc:{self.highest_qc}, ' \
                f'highest_qc_round:{self.highest_qc_round}, last_voted_round:{self.last_voted_round}, ' \
-               f'preferred_round:{self.preferred_round}, committed:{self.committed}, votes:{self.votes}, ' \
-               f'message_to_send:{self.message_to_send})'
+               f'preferred_round:{self.preferred_round}, committed:{self.committed}, ' \
+               f'message_to_send:{self.message_to_send})'  # , votes:{self.get_votes_str()})'
 
-
+    def get_votes_str(self):
+        set_dict = self.votes  # dict class set
+        new_dict = dict()
+        for item in set_dict.items():
+            temp = sorted(item[1], key=lambda x: x.author)
+            new_dict.setdefault(item[0], temp)
+        return new_dict
