@@ -33,8 +33,8 @@ class TwinsRunner:
         self.log_path = log_path
         self.NodeClass = NodeClass
         self.node_args = node_args
-        self.last_dict_set = set()
-        self.new_dict_set = set()
+        self.last_dict_set = dict()
+        self.new_dict_set = dict()
 
         with open(file_path) as f:
             data = load(f)
@@ -68,7 +68,7 @@ class TwinsRunner:
         for i in range(3, self.num_of_rounds + 1):
             runner.run_one_round(i, network)
             # todo
-            if i == 3:
+            if i == 4:
                 break
 
     def run_one_round(self, current_round, network):
@@ -88,23 +88,23 @@ class TwinsRunner:
                 network.run(150, current_round)
                 new_phase_state = deepcopy(network.node_states)
                 if self.duplicate_checking(new_phase_state) is False:
-                    self.new_dict_set.add(new_phase_state)
+                    self.new_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
 
                 if self.log_path is not None:
                     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
                     self._print_log(file_path, network)
+                logging.info(f'round-{current_round}-state-{j}-failure-{i} finished.')
 
                 network.node_states = PhaseState()
                 network.trace = []
 
         self.last_dict_set = self.new_dict_set
         self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
-        self.new_dict_set = set()
+        self.new_dict_set = dict()
 
     def duplicate_checking(self, new_phase_state):
-        for x in self.new_dict_set:
-            if x == new_phase_state:
-                return True
+        if self.new_dict_set.get(new_phase_state.__str__()) is not None:
+            return True
         else:
             return False
 
@@ -162,10 +162,10 @@ class TwinsRunner:
                 if i != len(network.failure) - 1:
                     failures += ','
         data += [failures]
-        if failures == '':
-            logging.info(f'Failures: None')
-        else:
-            logging.info(f'Failures: {failures}')
+        # if failures == '':
+        #     logging.info(f'Failures: None')
+        # else:
+        #     logging.info(f'Failures: {failures}')
 
         data += [']\n']
 

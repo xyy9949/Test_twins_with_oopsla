@@ -35,7 +35,7 @@ class FHSNode(Node):
         # drop message
         if message.is_to_drop(fromx, tox, failure):
             if self.name == fromx.name or self.name == tox.name:
-                logging.info(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
+                # logging.info(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
                 self.log(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
             return -1
 
