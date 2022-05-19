@@ -27,12 +27,13 @@ if __name__ == '__main__':
 
 
     dict1 = dict()
-    dict1.setdefault('1||2', C)
-    dict1.setdefault('2||3', D)
+    dict1.update({'1||2': C})
+    dict1.update({'2||3': D})
+    dict1.update({'1||2': D})
     new_dict = dict()
 
-    for item in dict1.items():
-        temp = sorted(item[1], key=lambda x: x.author)
-        new_dict.setdefault(item[0], temp)
+    # for item in dict1.items():
+    #     temp = sorted(item[1], key=lambda x: x.author)
+    #     new_dict.setdefault(item[0], temp)
 
     print(new_dict)

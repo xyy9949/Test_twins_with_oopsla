@@ -76,6 +76,9 @@ class TwinsRunner:
         node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
         self.failures = node_failure_setting.failures
 
+        if current_round == 4:
+            print()
+
         if current_round == 3:
             self.init_dict_set()
 
@@ -86,6 +89,7 @@ class TwinsRunner:
                 network.failure = failure
                 network.env = simpy.Environment()
                 network.run(150, current_round)
+                self.fix_none_state(network)
                 new_phase_state = deepcopy(network.node_states)
                 if self.duplicate_checking(new_phase_state) is False:
                     self.new_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
@@ -111,7 +115,20 @@ class TwinsRunner:
     def init_dict_set(self):
         self.last_dict_set = dict()
         ps = PhaseState()
-        self.last_dict_set.setdefault(ps.__str__(),PhaseState())
+        self.last_dict_set.setdefault(ps.__str__(), PhaseState())
+
+    def fix_none_state(self, network):
+        # phase state is dict of NodeState
+        node_state_dict = network.node_states.node_state_dict
+        if isinstance(node_state_dict, dict):
+            for index in range(len(network.nodes)):
+                node_state = node_state_dict.get(index)
+                if node_state is None:
+                    node = network.nodes.get(index)
+                    none_state = NodeState(node.round, node.name, node.highest_qc,
+                                                  node.highest_qc_round, node.last_voted_round, node.preferred_round,
+                                                  node.storage.committed, node.storage.votes, None)
+                    node_state_dict.update({node.name: none_state})
 
     def init_network_nodes(self, network, node_state_dict, current_round):
         if current_round == 3:
@@ -122,19 +139,19 @@ class TwinsRunner:
         for x in network.nodes.values():
             x_state = node_state_dict.get(x.name)
             self.set_node_state(x, x_state)
+            x.has_message_to_send_flag = False
 
     def set_node_state(self, node, node_state):
         # follower may not save state when it's a vote round
         # A vote round change leader's state
-        if node_state is not None:
-            node.round = node_state.round
-            node.highest_qc = node_state.highest_qc
-            node.highest_qc_round = node_state.highest_qc_round
-            node.last_voted_round = node_state.last_voted_round
-            node.preferred_round = node_state.preferred_round
-            node.storage.committed = deepcopy(node_state.committed)
-            node.storage.votes = deepcopy(node_state.votes)
-            node.message_to_send = node_state.message_to_send
+        node.round = node_state.round
+        node.highest_qc = node_state.highest_qc
+        node.highest_qc_round = node_state.highest_qc_round
+        node.last_voted_round = node_state.last_voted_round
+        node.preferred_round = node_state.preferred_round
+        node.storage.committed = deepcopy(node_state.committed)
+        node.storage.votes = deepcopy(node_state.votes)
+        node.message_to_send = node_state.message_to_send
 
     def _print_state(self, file_path):
         phase_state_set = self.new_dict_set

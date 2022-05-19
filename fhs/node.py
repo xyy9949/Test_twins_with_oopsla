@@ -27,6 +27,7 @@ class FHSNode(Node):
         # Node store (each node has its own).
         self.storage = NodeStorage(self)
         self.message_to_send = None
+        self.has_message_to_send_flag = False
 
     def receive(self, fromx, tox, message, failure):
         """ Handles incoming messages. """
@@ -57,11 +58,18 @@ class FHSNode(Node):
                 # do not broadcast
                 # self.network.broadcast(self, block)
                 # do save node state as a leader
+                self.has_message_to_send_flag = True
                 temp_leader_state = NodeState(self.round, self.name, self.highest_qc,
                                                 self.highest_qc_round, self.last_voted_round, self.preferred_round,
                                                 self.storage.committed, self.storage.votes, block)
                 if isinstance(self.network, Network):
-                    self.network.node_states.node_state_dict.setdefault(self.name, temp_leader_state)
+                    self.network.node_states.node_state_dict.update({self.name: temp_leader_state})
+            elif self.has_message_to_send_flag is False:
+                temp_leader_state = NodeState(self.round, self.name, self.highest_qc,
+                                              self.highest_qc_round, self.last_voted_round, self.preferred_round,
+                                              self.storage.committed, self.storage.votes, None)
+                if isinstance(self.network, Network):
+                    self.network.node_states.node_state_dict.update({self.name: temp_leader_state})
 
         else:
             assert False  # pragma: no cover
@@ -86,11 +94,18 @@ class FHSNode(Node):
             # do not vote
             # [self.network.send(self, x, vote) for x in next_leaders]
             # do save node state as a follower
+            self.has_message_to_send_flag = True
             temp_follower_state = NodeState(self.round, self.name, self.highest_qc,
                                               self.highest_qc_round, self.last_voted_round, self.preferred_round,
                                               self.storage.committed, self.storage.votes, vote)
             if isinstance(self.network, Network):
-                self.network.node_states.node_state_dict.setdefault(self.name, temp_follower_state)
+                self.network.node_states.node_state_dict.update({self.name: temp_follower_state})
+        elif self.has_message_to_send_flag is False:
+            temp_follower_state = NodeState(self.round, self.name, self.highest_qc,
+                                            self.highest_qc_round, self.last_voted_round, self.preferred_round,
+                                            self.storage.committed, self.storage.votes, None)
+            if isinstance(self.network, Network):
+                self.network.node_states.node_state_dict.update({self.name: temp_follower_state})
 
     def _process_qc(self, qc):
         self.log(f'Received QC {qc}', color=BColors.OK)

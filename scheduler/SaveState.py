@@ -80,7 +80,7 @@ class NodeState:
     def __str__(self):
         return f'NodeState(name:{self.node_name}, round:{self.round}, highest_qc:{self.highest_qc}, ' \
                f'highest_qc_round:{self.highest_qc_round}, last_voted_round:{self.last_voted_round}, ' \
-               f'preferred_round:{self.preferred_round}, committed:{self.committed}, ' \
+               f'preferred_round:{self.preferred_round}, committed:{sorted(self.committed, key=lambda x: x.for_sort())}, ' \
                f'message_to_send:{self.message_to_send})'  # , votes:{self.get_votes_str()})'
 
     def get_votes_str(self):
