@@ -101,7 +101,7 @@ class TwinsRunner:
                 # if self.log_path is not None:
                 #     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
                 #     self._print_log(file_path, network)
-                logging.info(f'round-{current_round}-state-{j}-failure-{i}-states-{len(self.new_dict_set)} finished.')
+                logging.info(f'round-{current_round}-state-{j}-failure-{i}-states-{len(self.new_dict_set)}-fail states-{len(self.fail_states_dict_set)} finished.')
 
                 network.node_states = PhaseState()
                 network.trace = []
