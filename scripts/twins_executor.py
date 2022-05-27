@@ -26,7 +26,6 @@ from streamlet.node import StreamletNode
 
 class TwinsRunner:
     def __init__(self, num_of_rounds, file_path, NodeClass, node_args, log_path=None):
-        self.safety_fail_num = None
         self.safety_check = None
         self.depth = None
         self.file_path = file_path
@@ -35,6 +34,7 @@ class TwinsRunner:
         self.node_args = node_args
         self.last_dict_set = dict()
         self.new_dict_set = dict()
+        self.fail_states_dict_set = dict()
 
         with open(file_path) as f:
             data = load(f)
@@ -53,7 +53,6 @@ class TwinsRunner:
         )
 
     def run(self):
-        self.safety_fail_num = 0
 
         model = SyncModel()
         network = TwinsNetwork(
@@ -68,8 +67,8 @@ class TwinsRunner:
         for i in range(3, self.num_of_rounds + 1):
             runner.run_one_round(i, network)
             # todo
-            if i == 4:
-                break
+            # if i == 4:
+            #     break
 
     def run_one_round(self, current_round, network):
         # list of list
@@ -82,6 +81,7 @@ class TwinsRunner:
         if current_round == 3:
             self.init_dict_set()
 
+
         for j, phase_state in enumerate(self.last_dict_set.values()):
             for i, failure in enumerate(self.failures):
                 self.init_network_nodes(network, phase_state.node_state_dict, current_round)
@@ -91,13 +91,17 @@ class TwinsRunner:
                 network.run(150, current_round)
                 self.fix_none_state(network)
                 new_phase_state = deepcopy(network.node_states)
-                if self.duplicate_checking(new_phase_state) is False:
-                    self.new_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
+                """ add states_safety_check and store the safety check failure states """
+                if self.duplicate_checking(self.new_dict_set, new_phase_state) is False:
+                    if self.states_safety_check(new_phase_state) is True:
+                        self.new_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
+                    elif self.duplicate_checking(self.fail_states_dict_set, new_phase_state) is False:
+                        self.fail_states_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
 
                 # if self.log_path is not None:
                 #     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
                 #     self._print_log(file_path, network)
-                logging.info(f'round-{current_round}-state-{j}-failure-{i} finished.')
+                logging.info(f'round-{current_round}-state-{j}-failure-{i}-states-{len(self.new_dict_set)}-fail states-{len(self.fail_states_dict_set)} finished.')
 
                 network.node_states = PhaseState()
                 network.trace = []
@@ -105,9 +109,10 @@ class TwinsRunner:
         self.last_dict_set = self.new_dict_set
         self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
         self.new_dict_set = dict()
+        self.fail_states_dict_set = dict()
 
-    def duplicate_checking(self, new_phase_state):
-        if self.new_dict_set.get(new_phase_state.__str__()) is not None:
+    def duplicate_checking(self, dict_set, new_phase_state):
+        if dict_set.get(new_phase_state.__str__()) is not None:
             return True
         else:
             return False
@@ -155,16 +160,29 @@ class TwinsRunner:
 
     def _print_state(self, file_path):
         phase_state_set = self.new_dict_set
+        fail_phase_state_set = self.fail_states_dict_set
         phase_state_list = list(phase_state_set.values())
+        fail_phase_state_list = list(fail_phase_state_set.values())
         num = len(self.new_dict_set)
-        data = [f'All phases of this round end, generated {num} states.\n\nThey are :\n\n']
+        fail_num = len(self.fail_states_dict_set)
+        data = [f'All phases of this round end, find {fail_num} safety check failure states and '
+                f'generated {num} states.\n\n {fail_num} safety check failure states are :\n\n']
         dicts = ''
+        fail_dicts = ''
+        for i, phase_state in enumerate(fail_phase_state_list):
+            if isinstance(phase_state.node_state_dict, dict):
+                fail_dicts += phase_state.__str__()
+                if i != len(fail_phase_state_list) - 1:
+                    fail_dicts += ';\n'
+        data += [fail_dicts]
+        data += [f'\n\n {num} states are: \n\n']
         for i, phase_state in enumerate(phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
                 dicts += phase_state.__str__()
                 if i != len(phase_state_list) - 1:
                     dicts += ';\n'
         data += [dicts]
+
         with open(file_path, 'w') as f:
             f.write(''.join(data))
 
@@ -198,6 +216,24 @@ class TwinsRunner:
 
         with open(file_path, 'w') as f:
             f.write(''.join(data))
+
+    def states_safety_check(self, new_phase_state):
+        longest = None
+        dic = new_phase_state.node_state_dict
+        for k, v in dic.items():
+            if k == 0 or k == 4: continue
+            committed_blocks = v.committed
+            committed_list = list(sorted(committed_blocks, key=lambda x: x.for_sort()))
+            if longest is None:
+                longest = committed_list
+                continue
+            for i in range(min(len(longest), len(committed_list))):
+                if longest[i].round == committed_list[i].round:
+                    if str(longest[i]) != str(committed_list[i]):
+                        return False
+            if len(longest) < len(committed_list):
+                longest = committed_list
+        return True
 
     def check_safety(self, network):
         longest = None
