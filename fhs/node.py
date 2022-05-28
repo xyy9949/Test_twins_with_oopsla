@@ -47,34 +47,33 @@ class FHSNode(Node):
         if isinstance(message, Block):
             self.sync_storage.add_block(message)
             self._process_qc(message.qc)
-            self._process_block(message)
+            self._process_block(message, 0)
 
         # Handle incoming votes and new view messages.
         elif isinstance(message, GenericVote):
             qc = self.storage.add_vote(message)
             if qc is not None:
-                self._process_block(qc.block(self.sync_storage))
+                self._process_block(qc.block(self.sync_storage), 1)
                 block = Block(qc, self.round + 1, self.name)
                 # do not broadcast
                 # self.network.broadcast(self, block)
                 # do save node state as a leader
                 if self.has_message_to_send_flag is True:
                     # another block to send
-                    message_list = []
                     if isinstance(self.network, Network):
-                        prev_message = self.network.node_states.node_state_dict.get(self.name).message_to_send
-                        message_list.append(prev_message)
-                        message_list.append(block)
+                        last_message_list = self.network.node_states.node_state_dict.get(self.name).message_to_send
+                        last_message_list.append(block)
                         temp_leader_state = NodeState(self.round, self.name, self.highest_qc,
                                                       self.highest_qc_round, self.last_voted_round,
                                                       self.preferred_round,
-                                                      self.storage.committed, self.storage.votes, message_list)
+                                                      self.storage.committed, self.storage.votes, last_message_list)
                         self.network.node_states.node_state_dict.update({self.name: temp_leader_state})
                 else:
+                    # first block to send
                     self.has_message_to_send_flag = True
                     temp_leader_state = NodeState(self.round, self.name, self.highest_qc,
                                                   self.highest_qc_round, self.last_voted_round, self.preferred_round,
-                                                  self.storage.committed, self.storage.votes, block)
+                                                  self.storage.committed, self.storage.votes, [block])
                     if isinstance(self.network, Network):
                         self.network.node_states.node_state_dict.update({self.name: temp_leader_state})
             elif self.has_message_to_send_flag is False:
@@ -87,7 +86,7 @@ class FHSNode(Node):
         else:
             assert False  # pragma: no cover
 
-    def _process_block(self, block):
+    def _process_block(self, block, flag):
         prev_block = block.qc.block(self.sync_storage)
 
         # Check if we can vote for the block.
@@ -99,6 +98,9 @@ class FHSNode(Node):
             self.timeout = self.DELAY
             self.last_voted_round = block.round
             self.round = max(self.round, block.round + 1)
+            # if flag = 1, there is a QC, no need to vote
+            if flag == 1:
+                return
             vote = Vote(block.digest(), self.name)
             vote.round = self.round
             indeces = self.le.get_leader(round=block.round + 1)
@@ -110,7 +112,7 @@ class FHSNode(Node):
             self.has_message_to_send_flag = True
             temp_follower_state = NodeState(self.round, self.name, self.highest_qc,
                                               self.highest_qc_round, self.last_voted_round, self.preferred_round,
-                                              self.storage.committed, self.storage.votes, vote)
+                                              self.storage.committed, self.storage.votes, [vote])
             if isinstance(self.network, Network):
                 self.network.node_states.node_state_dict.update({self.name: temp_follower_state})
         elif self.has_message_to_send_flag is False:
@@ -153,17 +155,13 @@ class FHSNode(Node):
             block = Block(self.highest_qc, self.round, self.name)
             self.network.broadcast(self, block)
         elif self.is_leader() and current_round % 2 == 1 and self.message_to_send is not None:
-            block = self.message_to_send
-            if isinstance(block,list):
-                self.network.broadcast(self, block.pop())
-                self.network.broadcast(self, block.pop())
-            else:
+            for block in self.message_to_send:
                 self.network.broadcast(self, block)
         elif current_round % 2 == 0 and self.message_to_send is not None:
             # follower send vote
-            vote = self.message_to_send
-            self.log(f'Sending vote {vote} to {[0, 4]}')
-            next_leaders = [self.network.nodes[x] for x in [0, 4]]
-            [self.network.send(self, x, vote) for x in next_leaders]
+            for vote in self.message_to_send:
+                self.log(f'Sending vote {vote} to {[0, 4]}')
+                next_leaders = [self.network.nodes[x] for x in [0, 4]]
+                [self.network.send(self, x, vote) for x in next_leaders]
         while True:
             yield self.network.env.timeout(1000)

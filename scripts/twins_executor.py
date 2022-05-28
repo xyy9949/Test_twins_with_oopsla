@@ -67,7 +67,7 @@ class TwinsRunner:
         for i in range(3, self.num_of_rounds + 1):
             runner.run_one_round(i, network)
             # todo
-            if i == 7:
+            if i == 4:
                 break
 
     def run_one_round(self, current_round, network):
@@ -75,31 +75,11 @@ class TwinsRunner:
         node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
         self.failures = node_failure_setting.failures
 
-        if current_round == 4:
-            print()
-
         if current_round == 3:
             self.init_dict_set()
 
-
         for j, phase_state in enumerate(self.last_dict_set.values()):
             for i, failure in enumerate(self.failures):
-                if current_round == 3:
-                    if i != 0:
-                        continue
-                elif current_round == 4:
-                    print()
-                    if i != 1:
-                        continue
-                elif current_round == 5:
-                    if i != 2:
-                        continue
-                elif current_round == 6:
-                    if i != 3:
-                        continue
-                elif current_round == 7:
-                    if i != 4:
-                        continue
                 self.init_network_nodes(network, phase_state.node_state_dict, current_round)
                 # run one phase
                 network.failure = failure
@@ -111,17 +91,17 @@ class TwinsRunner:
                 if self.duplicate_checking(self.new_dict_set, new_phase_state) is False:
                     if self.states_safety_check(new_phase_state) is True:
                         self.new_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
-                    elif self.duplicate_checking(self.fail_states_dict_set, new_phase_state) is False:
+                    else:
                         self.fail_states_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
 
-                # if self.log_path is not None:
-                #     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
-                #     self._print_log(file_path, network)
-                logging.info(f'round-{current_round}-state-{j}-failure-{i}-states-{len(self.new_dict_set)}-fail states-{len(self.fail_states_dict_set)} finished.')
-
+                if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
+                    file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
+                    self._print_log(file_path, network)
+                logging.info(
+                    f'round-{current_round}-used_state-{j}-failure-{i} finished.There are already'
+                    f' {len(self.new_dict_set)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
                 network.node_states = PhaseState()
                 network.trace = []
-
         self.last_dict_set = self.new_dict_set
         self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
         self.new_dict_set = dict()
@@ -147,8 +127,8 @@ class TwinsRunner:
                 if node_state is None:
                     node = network.nodes.get(index)
                     none_state = NodeState(node.round, node.name, node.highest_qc,
-                                                  node.highest_qc_round, node.last_voted_round, node.preferred_round,
-                                                  node.storage.committed, node.storage.votes, None)
+                                           node.highest_qc_round, node.last_voted_round, node.preferred_round,
+                                           node.storage.committed, node.storage.votes, None)
                     node_state_dict.update({node.name: none_state})
 
     def init_network_nodes(self, network, node_state_dict, current_round):
@@ -172,7 +152,7 @@ class TwinsRunner:
         node.preferred_round = node_state.preferred_round
         node.storage.committed = deepcopy(node_state.committed)
         node.storage.votes = deepcopy(node_state.votes)
-        node.message_to_send = node_state.message_to_send
+        node.message_to_send = deepcopy(node_state.message_to_send)
 
     def _print_state(self, file_path):
         phase_state_set = self.new_dict_set
@@ -181,8 +161,9 @@ class TwinsRunner:
         fail_phase_state_list = list(fail_phase_state_set.values())
         num = len(self.new_dict_set)
         fail_num = len(self.fail_states_dict_set)
-        data = [f'All phases of this round end, find {fail_num} safety check failure states and '
-                f'generated {num} states.\n\n {fail_num} safety check failure states are :\n\n']
+        data = [f'All phases of this round end, find {fail_num} safety-violating states and '
+                f'generated {num} legal states.\n##################################\nThe following are {fail_num} safety'
+                f'-violating states:\n\n']
         dicts = ''
         fail_dicts = ''
         for i, phase_state in enumerate(fail_phase_state_list):
@@ -191,7 +172,7 @@ class TwinsRunner:
                 if i != len(fail_phase_state_list) - 1:
                     fail_dicts += ';\n'
         data += [fail_dicts]
-        data += [f'\n\n {num} states are: \n\n']
+        data += [f'\n##################################\nThe following are {num} legal states:\n\n']
         for i, phase_state in enumerate(phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
                 dicts += phase_state.__str__()
