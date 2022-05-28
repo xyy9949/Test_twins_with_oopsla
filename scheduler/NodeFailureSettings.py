@@ -9,7 +9,7 @@ class NodeFailureSettings:
         self.bin_num_len = num_of_leaders * num_of_processes
         """ 最多生成depth个failure """
         self.depth = int(math.pow(2, self.bin_num_len))
-        self.failures = self.get_failures()
+        self.failures = self.get_failures_of_twins()
 
     def get_random_failures(self):
         pass
@@ -41,6 +41,45 @@ class NodeFailureSettings:
                             NodeFailure(i % self.num_of_processes,
                                         receiver))
             failures.append(failure)
+
+        return failures
+
+    def get_failures_of_twins(self):
+        failures = []
+
+        # round 3
+        failure = []
+        failure.append(NodeFailure(4, 0))
+        failure.append(NodeFailure(4, 1))
+        failure.append(NodeFailure(4, 2))
+        failure.append(NodeFailure(4, 3))
+        failures.append(failure)
+
+        # round 4
+        failure = []
+        failure.append(NodeFailure(0, 4))
+        failure.append(NodeFailure(1, 4))
+        failure.append(NodeFailure(2, 4))
+        failure.append(NodeFailure(3, 4))
+        failures.append(failure)
+
+        # round 5
+        failure = []
+        failure.append(NodeFailure(4, 3))
+        failure.append(NodeFailure(0, 3))
+        failures.append(failure)
+
+        # round 6
+        failure = []
+        failure.append(NodeFailure(3, 4))
+        failure.append(NodeFailure(3, 0))
+        failures.append(failure)
+
+        # round 7
+        failure = []
+        failure.append(NodeFailure(4, 1))
+        failure.append(NodeFailure(0, 1))
+        failures.append(failure)
 
         return failures
 
