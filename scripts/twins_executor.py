@@ -46,6 +46,7 @@ class TwinsRunner:
         self.num_of_rounds = num_of_rounds
         self.seed = None
         self.failures = None
+        self.print_log_times = 0
         logging.debug(f'Scenario file {args.path} successfully loaded.')
         logging.info(
             f'Settings: {self.num_of_nodes} nodes, {self.num_of_twins} twins, '
@@ -96,7 +97,9 @@ class TwinsRunner:
 
                 if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
                     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
-                    self._print_log(file_path, network)
+                    if self.print_log_times <= 100:
+                        self._print_log(file_path, network)
+                        self.print_log_times += 1
                 logging.info(
                     f'round-{current_round}-used_state-{j}-failure-{i} finished.There are already'
                     f' {len(self.new_dict_set)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
@@ -162,22 +165,30 @@ class TwinsRunner:
         num = len(self.new_dict_set)
         fail_num = len(self.fail_states_dict_set)
         data = [f'All phases of this round end, find {fail_num} safety-violating states and '
-                f'generated {num} legal states.\n##################################\nThe following are {fail_num} safety'
+                f'generated {num} legal states.\n##################################\nThe following are top 100 of {fail_num} safety'
                 f'-violating states:\n\n']
         dicts = ''
         fail_dicts = ''
         for i, phase_state in enumerate(fail_phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
                 fail_dicts += phase_state.__str__()
-                if i != len(fail_phase_state_list) - 1:
+                # if i != len(fail_phase_state_list) - 1:
+                #     fail_dicts += ';\n'
+                if i != 99:
                     fail_dicts += ';\n'
+                if i == 99:
+                    break
         data += [fail_dicts]
-        data += [f'\n##################################\nThe following are {num} legal states:\n\n']
+        data += [f'\n##################################\nThe following are top 100 of {num} legal states:\n\n']
         for i, phase_state in enumerate(phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
                 dicts += phase_state.__str__()
-                if i != len(phase_state_list) - 1:
+                # if i != len(phase_state_list) - 1:
+                #     dicts += ';\n'
+                if i != 99:
                     dicts += ';\n'
+                if i == 99:
+                    break
         data += [dicts]
 
         with open(file_path, 'w') as f:
