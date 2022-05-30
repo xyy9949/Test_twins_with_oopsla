@@ -47,6 +47,34 @@ class PhaseState:
                + ',' + self.node_state_dict.get(3).__str__() \
                + ',' + self.node_state_dict.get(4).__str__()
 
+    def to_string(self, tags) -> str:
+        result = ''
+        if self.node_state_dict.get(0) is None:
+            result += 'None'
+        else:
+            result += self.node_state_dict.get(0).to_string(tags)
+        if self.node_state_dict.get(1) is None:
+            result += ',None'
+        else:
+            result += ','
+            result += self.node_state_dict.get(1).to_string(tags)
+        if self.node_state_dict.get(2) is None:
+            result += ',None'
+        else:
+            result += ','
+            result += self.node_state_dict.get(2).to_string(tags)
+        if self.node_state_dict.get(3) is None:
+            result += ',None'
+        else:
+            result += ','
+            result += self.node_state_dict.get(3).to_string(tags)
+        if self.node_state_dict.get(4) is None:
+            result += ',None'
+        else:
+            result += ','
+            result += self.node_state_dict.get(4).to_string(tags)
+        return result
+
 
 class NodeState:
     def __init__(self, round, node_name, highest_qc, highest_qc_round, last_voted_round, preferred_round,
@@ -83,6 +111,32 @@ class NodeState:
                f'preferred_round:{self.preferred_round}, ' \
                f'committed:{sorted(self.committed, key=lambda x: x.for_sort())}, ' \
                f'message_to_send:{self.message_to_send})'
+
+    def to_string(self, tags) -> str:
+        # 1 round
+        # 2 highest_qc
+        # 3 highest_qc_round
+        # 4 last_voted_round
+        # 5 preferred_round
+        # 6 committed
+        # 7 message_to_send
+        result = f'NodeState(name:{self.node_name}'
+        if '1' in tags:
+            result += f', round:{self.round}'
+        if '2' in tags:
+            result += f', highest_qc:{self.highest_qc}'
+        if '3' in tags:
+            result += f', highest_qc_round:{self.highest_qc_round}'
+        if '4' in tags:
+            result += f', last_voted_round:{self.last_voted_round}'
+        if '5' in tags:
+            result += f', preferred_round:{self.preferred_round}'
+        if '6' in tags:
+            result += f', committed:{sorted(self.committed, key=lambda x: x.for_sort())}'
+        if '7' in tags:
+            result += f', message_to_send:{self.message_to_send}'
+        result += f')'
+        return result
 
     def get_votes_str(self):
         set_dict = self.votes  # dict class set

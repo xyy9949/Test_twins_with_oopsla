@@ -1,15 +1,8 @@
 import json
 import sys
 from copy import deepcopy
-
+sys.path.append('E:\\bft_testing\\Test_twins_with_oopsla\\scheduler')
 from scheduler.SaveState import *
-from sim.Contacts import Contacts
-
-sys.path += '../fhs'
-sys.path += '../streamlet'
-sys.path += '../twins'
-sys.path += '../sim'
-
 from os.path import join
 import argparse
 import simpy
@@ -35,6 +28,7 @@ class TwinsRunner:
         self.last_dict_set = dict()
         self.new_dict_set = dict()
         self.fail_states_dict_set = dict()
+        self.focus_tags = None
 
         with open(file_path) as f:
             data = load(f)
@@ -91,15 +85,17 @@ class TwinsRunner:
                 """ add states_safety_check and store the safety check failure states """
                 if self.duplicate_checking(self.new_dict_set, new_phase_state) is False:
                     if self.states_safety_check(new_phase_state) is True:
-                        self.new_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
+                        self.new_dict_set.setdefault(new_phase_state.to_string(self.focus_tags), new_phase_state)
                     else:
-                        self.fail_states_dict_set.setdefault(new_phase_state.__str__(), new_phase_state)
+                        self.fail_states_dict_set.setdefault(new_phase_state.to_string(self.focus_tags), new_phase_state)
 
                 if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
                     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
-                    if self.print_log_times <= 100:
+                    if self.print_log_times <= 99:
                         self._print_log(file_path, network)
                         self.print_log_times += 1
+                for n in network.nodes.values():
+                    n.log.__init__()
                 logging.info(
                     f'round-{current_round}-used_state-{j}-failure-{i} finished.There are already'
                     f' {len(self.new_dict_set)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
@@ -111,7 +107,7 @@ class TwinsRunner:
         self.fail_states_dict_set = dict()
 
     def duplicate_checking(self, dict_set, new_phase_state):
-        if dict_set.get(new_phase_state.__str__()) is not None:
+        if dict_set.get(new_phase_state.to_string(self.focus_tags)) is not None:
             return True
         else:
             return False
@@ -119,7 +115,7 @@ class TwinsRunner:
     def init_dict_set(self):
         self.last_dict_set = dict()
         ps = PhaseState()
-        self.last_dict_set.setdefault(ps.__str__(), PhaseState())
+        self.last_dict_set.setdefault(ps.to_string(self.focus_tags), PhaseState())
 
     def fix_none_state(self, network):
         # phase state is dict of NodeState
@@ -164,14 +160,14 @@ class TwinsRunner:
         fail_phase_state_list = list(fail_phase_state_set.values())
         num = len(self.new_dict_set)
         fail_num = len(self.fail_states_dict_set)
-        data = [f'All phases of this round end, find {fail_num} safety-violating states and '
+        data = [f'All phases of this round end, found {fail_num} safety-violating states and '
                 f'generated {num} legal states.\n##################################\nThe following are top 100 of {fail_num} safety'
                 f'-violating states:\n\n']
         dicts = ''
         fail_dicts = ''
         for i, phase_state in enumerate(fail_phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
-                fail_dicts += phase_state.__str__()
+                fail_dicts += phase_state.to_string(self.focus_tags)
                 # if i != len(fail_phase_state_list) - 1:
                 #     fail_dicts += ';\n'
                 if i != 99:
@@ -182,7 +178,7 @@ class TwinsRunner:
         data += [f'\n##################################\nThe following are top 100 of {num} legal states:\n\n']
         for i, phase_state in enumerate(phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
-                dicts += phase_state.__str__()
+                dicts += phase_state.to_string(self.focus_tags)
                 # if i != len(phase_state_list) - 1:
                 #     dicts += ';\n'
                 if i != 99:
@@ -220,7 +216,6 @@ class TwinsRunner:
             data += [f'\n\nNode{n.name} logs:\n']
             data += [f'{t}\n' for t in n.log.log]
             data += [f'\n{n.storage.__repr__()}']
-            n.log.__init__()
 
         with open(file_path, 'w') as f:
             f.write(''.join(data))
@@ -273,6 +268,7 @@ if __name__ == '__main__':
     parser.add_argument('--path', help='path to the scenario file')
     parser.add_argument('--log', help='output log directory')
     parser.add_argument('--v', action='store_true', help='verbose logging')
+    parser.add_argument('--focus', help='tag num list')
     args = parser.parse_args()
 
     args.v = True
@@ -290,5 +286,6 @@ if __name__ == '__main__':
     runner.depth = int(args.depth)
     # random seed
     runner.seed = int(args.seed)
+    runner.focus_tags = args.focus.split(',')  # num list
 
     runner.run()
