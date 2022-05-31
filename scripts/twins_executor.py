@@ -168,23 +168,23 @@ class TwinsRunner:
         for i, phase_state in enumerate(fail_phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
                 fail_dicts += phase_state.to_string(self.focus_tags)
-                # if i != len(fail_phase_state_list) - 1:
-                #     fail_dicts += ';\n'
-                if i != 99:
+                if i != len(fail_phase_state_list) - 1:
                     fail_dicts += ';\n'
-                if i == 99:
-                    break
+                # if i != 99:
+                #     fail_dicts += ';\n'
+                # if i == 99:
+                #     break
         data += [fail_dicts]
         data += [f'\n##################################\nThe following are top 100 of {num} legal states:\n\n']
         for i, phase_state in enumerate(phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
                 dicts += phase_state.to_string(self.focus_tags)
-                # if i != len(phase_state_list) - 1:
-                #     dicts += ';\n'
-                if i != 99:
+                if i != len(phase_state_list) - 1:
                     dicts += ';\n'
-                if i == 99:
-                    break
+                # if i != 99:
+                #     dicts += ';\n'
+                # if i == 99:
+                #     break
         data += [dicts]
 
         with open(file_path, 'w') as f:

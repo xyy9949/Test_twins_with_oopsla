@@ -71,6 +71,9 @@ class Vote(GenericVote):
         else:
             return False
 
+    def for_sort(self):
+        return f'V(Node{self.author}, {self.block_hash})'
+
 
 class NewView(GenericVote):
     def __init__(self, qc, round, author):

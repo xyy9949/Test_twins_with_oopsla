@@ -98,7 +98,7 @@ class NodeState:
                 self.last_voted_round == other.last_voted_round and \
                 self.preferred_round == other.preferred_round and \
                 self.votes == other.votes and \
-                self.message_to_send == other.message_to_send and \
+                list(sorted(self.message_to_send, key=lambda x: x.for_sort())) == list(sorted(other.message_to_send, key=lambda x: x.for_sort())) and \
                 list(sorted(self.committed, key=lambda x: x.for_sort())) == \
                 list(sorted(self.committed, key=lambda x: x.for_sort())):
             return True
@@ -110,7 +110,7 @@ class NodeState:
                f'highest_qc_round:{self.highest_qc_round}, last_voted_round:{self.last_voted_round}, ' \
                f'preferred_round:{self.preferred_round}, ' \
                f'committed:{sorted(self.committed, key=lambda x: x.for_sort())}, ' \
-               f'message_to_send:{self.message_to_send})'
+               f'message_to_send:{sorted(self.message_to_send, key=lambda x: x.for_sort())})'
 
     def to_string(self, tags) -> str:
         # 1 round
@@ -134,7 +134,10 @@ class NodeState:
         if '6' in tags:
             result += f', committed:{sorted(self.committed, key=lambda x: x.for_sort())}'
         if '7' in tags:
-            result += f', message_to_send:{self.message_to_send}'
+            if self.message_to_send is None:
+                result += f', message_to_send:None'
+            else:
+                result += f', message_to_send:{sorted(self.message_to_send, key=lambda x: x.for_sort())}'
         result += f')'
         return result
 
