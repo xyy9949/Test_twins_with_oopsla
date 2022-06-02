@@ -61,9 +61,6 @@ class TwinsRunner:
 
         for i in range(3, self.num_of_rounds + 1):
             runner.run_one_round(i, network)
-            # todo
-            if i == 4:
-                break
 
     def run_one_round(self, current_round, network):
         # list of list
@@ -75,6 +72,16 @@ class TwinsRunner:
 
         for j, phase_state in enumerate(self.last_dict_set.values()):
             for i, failure in enumerate(self.failures):
+                if current_round == 3:
+                    failure = self.failures[0]
+                if current_round == 4:
+                    failure = self.failures[1]
+                if current_round == 5:
+                    failure = self.failures[2]
+                if current_round == 6:
+                    failure = self.failures[3]
+                if current_round == 7:
+                    failure = self.failures[4]
                 self.init_network_nodes(network, phase_state.node_state_dict, current_round)
                 # run one phase
                 network.failure = failure
@@ -101,6 +108,7 @@ class TwinsRunner:
                     f' {len(self.new_dict_set)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
                 network.node_states = PhaseState()
                 network.trace = []
+                break
         self.last_dict_set = self.new_dict_set
         self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
         self.new_dict_set = dict()

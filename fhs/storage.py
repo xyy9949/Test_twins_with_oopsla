@@ -46,7 +46,7 @@ class NodeStorage():
             f'NodeStorage content ({self.node} at round {self.node.round}):\n'
             f'\tVotes({len(self.votes)}): {self.votes}\n'
             f'\tNewViews({len(self.new_views)}): {self.new_views}\n'
-            f'\tCommitted({len(self.committed)}): {self.committed}'
+            f'\tCommitted({len(self.committed)}): {sorted(self.committed, key=lambda x: x.for_sort())}'
         )
 
     def add_vote(self, message):

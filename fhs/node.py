@@ -58,17 +58,7 @@ class FHSNode(Node):
                 # do not broadcast
                 # self.network.broadcast(self, block)
                 # do save node state as a leader
-                if self.has_message_to_send_flag is True:
-                    # another block to send
-                    if isinstance(self.network, Network):
-                        last_message_list = self.network.node_states.node_state_dict.get(self.name).message_to_send
-                        last_message_list.append(block)
-                        temp_leader_state = NodeState(self.round, self.name, self.highest_qc,
-                                                      self.highest_qc_round, self.last_voted_round,
-                                                      self.preferred_round,
-                                                      self.storage.committed, self.storage.votes, last_message_list)
-                        self.network.node_states.node_state_dict.update({self.name: temp_leader_state})
-                else:
+                if self.has_message_to_send_flag is not True:
                     # first block to send
                     self.has_message_to_send_flag = True
                     temp_leader_state = NodeState(self.round, self.name, self.highest_qc,
