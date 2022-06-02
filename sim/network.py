@@ -62,7 +62,7 @@ class Network:
             message.round
         )
         self.trace.append(entry)
-        tox.log(entry, color=BColors.INFO)
+        # tox.log(entry, color=BColors.INFO)
         # Deliver messages.
         if tox.receive(fromx, tox, message, self.failure) == -1:
             self.trace.pop()

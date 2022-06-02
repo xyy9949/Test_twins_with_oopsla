@@ -35,9 +35,9 @@ class FHSNode(Node):
 
         # drop message
         if message.is_to_drop(fromx, tox, failure):
-            if self.name == fromx.name or self.name == tox.name:
-                # logging.info(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
-                self.log(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
+            # if self.name == fromx.name or self.name == tox.name:
+            #     # logging.info(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
+            #     self.log(f'drop message {message} from {fromx.name} to {tox.name} in round {message.round}.')
             return -1
 
         if not (isinstance(message, Message) and message.verify(self.network)):
@@ -95,7 +95,7 @@ class FHSNode(Node):
             vote.round = self.round
             indeces = self.le.get_leader(round=block.round + 1)
             next_leaders = [self.network.nodes[x] for x in indeces]
-            self.log(f'Sending vote {vote} to {next_leaders}')
+            # self.log(f'Sending vote {vote} to {next_leaders}')
             # do not vote
             # [self.network.send(self, x, vote) for x in next_leaders]
             # do save node state as a follower
@@ -113,7 +113,7 @@ class FHSNode(Node):
                 self.network.node_states.node_state_dict.update({self.name: temp_follower_state})
 
     def _process_qc(self, qc):
-        self.log(f'Received QC {qc}', color=BColors.OK)
+        # self.log(f'Received QC {qc}', color=BColors.OK)
 
         # Get the 2 ancestors of the block as follows:
         # b0 <- b1 <- message
@@ -130,7 +130,7 @@ class FHSNode(Node):
 
         # Update the committed sequence.
         self.storage.commit(b0)
-        self.log(f'Committing {b0}', color=BColors.OK)
+        # self.log(f'Committing {b0}', color=BColors.OK)
 
     def is_leader(self):
         if self.name in [0, 4]:
@@ -150,7 +150,7 @@ class FHSNode(Node):
         elif current_round % 2 == 0 and self.message_to_send is not None:
             # follower send vote
             for vote in self.message_to_send:
-                self.log(f'Sending vote {vote} to {[0, 4]}')
+                # self.log(f'Sending vote {vote} to {[0, 4]}')
                 next_leaders = [self.network.nodes[x] for x in [0, 4]]
                 [self.network.send(self, x, vote) for x in next_leaders]
         while True:

@@ -217,8 +217,8 @@ class TwinsRunner:
 
         data += [']\n']
 
-        data += ['\n\nNetwork logs:\n']
-        data += [f'{t}\n' for t in network.trace] + ['\n']
+        # data += ['\n\nNetwork logs:\n']
+        # data += [f'{t}\n' for t in network.trace] + ['\n']
 
         for n in network.nodes.values():
             data += [f'\n\nNode{n.name} logs:\n']
