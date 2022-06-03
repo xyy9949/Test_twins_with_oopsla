@@ -60,7 +60,7 @@ class TwinsRunner:
         [network.add_node(n) for n in nodes]
 
         for i in range(3, self.num_of_rounds + 1):
-            if i == 5:
+            if i == 4:
                 break
             runner.run_one_round(i, network)
 
@@ -74,29 +74,21 @@ class TwinsRunner:
 
         for j, phase_state in enumerate(self.last_dict_set.values()):
             for i, failure in enumerate(self.failures):
-                # if current_round == 3:
-                #     failure = self.failures[0]
-                # if current_round == 4:
-                #     failure = self.failures[1]
-                # if current_round == 5:
-                #     failure = self.failures[2]
-                # if current_round == 6:
-                #     failure = self.failures[3]
-                # if current_round == 7:
-                #     failure = self.failures[4]
-                self.init_network_nodes(network, phase_state.node_state_dict, current_round)
+                self.init_network_nodes(network, phase_state, current_round)
                 # run one phase
                 network.failure = failure
                 network.env = simpy.Environment()
                 network.run(150, current_round)
                 self.fix_none_state(network)
                 new_phase_state = deepcopy(network.node_states)
+                new_phase_state.sync_storage = deepcopy(next(iter(network.nodes.values())).sync_storage)
                 """ add states_safety_check and store the safety check failure states """
                 if self.duplicate_checking(self.new_dict_set, new_phase_state) is False:
+                    print(new_phase_state.to_key(self.focus_tags))
                     if self.states_safety_check(new_phase_state) is True:
-                        self.new_dict_set.setdefault(new_phase_state.to_string(self.focus_tags), new_phase_state)
+                        self.new_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
                     else:
-                        self.fail_states_dict_set.setdefault(new_phase_state.to_string(self.focus_tags), new_phase_state)
+                        self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
 
                 if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
                     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
@@ -110,14 +102,13 @@ class TwinsRunner:
                     f' {len(self.new_dict_set)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
                 network.node_states = PhaseState()
                 network.trace = []
-                # break
         self.last_dict_set = self.new_dict_set
         self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
         self.new_dict_set = dict()
         self.fail_states_dict_set = dict()
 
     def duplicate_checking(self, dict_set, new_phase_state):
-        if dict_set.get(new_phase_state.to_string(self.focus_tags)) is not None:
+        if dict_set.get(new_phase_state.to_key(self.focus_tags)) is not None:
             return True
         else:
             return False
@@ -125,7 +116,7 @@ class TwinsRunner:
     def init_dict_set(self):
         self.last_dict_set = dict()
         ps = PhaseState()
-        self.last_dict_set.setdefault(ps.to_string(self.focus_tags), PhaseState())
+        self.last_dict_set.setdefault(ps.to_key(self.focus_tags), PhaseState())
 
     def fix_none_state(self, network):
         # phase state is dict of NodeState
@@ -140,16 +131,17 @@ class TwinsRunner:
                                            node.storage.committed, node.storage.votes, None)
                     node_state_dict.update({node.name: none_state})
 
-    def init_network_nodes(self, network, node_state_dict, current_round):
+    def init_network_nodes(self, network, phase_state, current_round):
         if current_round == 3:
             for x in network.nodes.values():
                 x.last_voted_round = 2
                 x.round = 3
             return
         for x in network.nodes.values():
-            x_state = node_state_dict.get(x.name)
+            x_state = phase_state.node_state_dict.get(x.name)
             self.set_node_state(x, x_state)
             x.has_message_to_send_flag = False
+            x.sync_storage = phase_state.sync_storage
 
     def set_node_state(self, node, node_state):
         # follower may not save state when it's a vote round
@@ -171,30 +163,32 @@ class TwinsRunner:
         num = len(self.new_dict_set)
         fail_num = len(self.fail_states_dict_set)
         data = [f'All phases of this round end, found {fail_num} safety-violating states and '
-                f'generated {num} legal states.\n##################################\nThe following are top 100 of {fail_num} safety'
+                f'generated {num} legal states.\n##################################\nThe following are top 10 of {fail_num} safety'
                 f'-violating states:\n\n']
         dicts = ''
         fail_dicts = ''
         for i, phase_state in enumerate(fail_phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
+                fail_dicts += f'#{i}\n'
                 fail_dicts += phase_state.to_string(self.focus_tags)
-                if i != len(fail_phase_state_list) - 1:
-                    fail_dicts += ';\n'
-                # if i != 99:
+                # if i != len(fail_phase_state_list) - 1:
                 #     fail_dicts += ';\n'
-                # if i == 99:
-                #     break
+                if i != 9:
+                    fail_dicts += '\n'
+                if i == 9:
+                    break
         data += [fail_dicts]
-        data += [f'\n##################################\nThe following are top 100 of {num} legal states:\n\n']
+        data += [f'\n##################################\nThe following are top 10 of {num} legal states:\n\n']
         for i, phase_state in enumerate(phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
+                dicts += f'#{i}\n'
                 dicts += phase_state.to_string(self.focus_tags)
-                if i != len(phase_state_list) - 1:
-                    dicts += ';\n'
-                # if i != 99:
+                # if i != len(phase_state_list) - 1:
                 #     dicts += ';\n'
-                # if i == 99:
-                #     break
+                if i != 9:
+                    dicts += '\n'
+                if i == 9:
+                    break
         data += [dicts]
 
         with open(file_path, 'w') as f:

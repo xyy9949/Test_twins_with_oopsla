@@ -22,11 +22,15 @@ class Block(Message):
         data = self.payload[0]
         return f'BK(Node{self.author}, {self.round}, {self.qc}, {data})'
 
+    def for_key(self):
+        data = self.payload[0]
+        return f'{self.author},{self.round},{self.qc},{data}'
+
     def digest(self):
         return f'{self.author}||{self.round}'
 
     def for_sort(self):
-        return f'Block(round:{self.round}, author:{self.author}, content:{self.qc})'
+        return f'{self.round},{self.author},{self.qc}'
 
     def __eq__(self, other):
         if self.qc == other.qc \
@@ -72,7 +76,10 @@ class Vote(GenericVote):
             return False
 
     def for_sort(self):
-        return f'V(Node{self.author}, {self.block_hash})'
+        return f'{self.author},{self.block_hash}'
+
+    def for_key(self):
+        return f'{self.author},{self.block_hash}'
 
 
 class NewView(GenericVote):
@@ -123,6 +130,9 @@ class QC(GenericQC):
 
     def __repr__(self):
         return f'QC({next(iter(self.votes)).block_hash})'
+
+    def for_key(self):
+        return f'{next(iter(self.votes)).block_hash}'
 
     def __eq__(self, other):
         if self.votes == other.votes:

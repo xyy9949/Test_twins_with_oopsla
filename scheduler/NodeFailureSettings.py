@@ -47,7 +47,7 @@ class NodeFailureSettings:
 
     def get_failures_of_twins(self):
         failures = []
-
+        
         # round 3
         failure = []
         failure.append(NodeFailure(4, 0))

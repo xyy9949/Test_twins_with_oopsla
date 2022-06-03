@@ -1,6 +1,7 @@
 class PhaseState:
     def __init__(self):
         self.node_state_dict = dict()
+        self.sync_storage = None
 
     def __eq__(self, other):
         if self.node_state_dict.get(0) is None and other.node_state_dict.get(0) is not None:
@@ -48,31 +49,84 @@ class PhaseState:
                + ',' + self.node_state_dict.get(4).__str__()
 
     def to_string(self, tags) -> str:
+        result = 'Node States: \n'
+        if self.node_state_dict.get(0) is None:
+            result += 'None,\n'
+        else:
+            result += self.node_state_dict.get(0).to_string(tags)
+            result += ',\n'
+        if self.node_state_dict.get(1) is None:
+            result += 'None,\n'
+        else:
+            result += self.node_state_dict.get(1).to_string(tags)
+            result += ',\n'
+        if self.node_state_dict.get(2) is None:
+            result += 'None,\n'
+        else:
+            result += self.node_state_dict.get(2).to_string(tags)
+            result += ',\n'
+        if self.node_state_dict.get(3) is None:
+            result += 'None,\n'
+        else:
+            result += self.node_state_dict.get(3).to_string(tags)
+            result += ',\n'
+        if self.node_state_dict.get(4) is None:
+            result += 'None,\n'
+        else:
+            result += self.node_state_dict.get(4).to_string(tags)
+            result += '.\n'
+        result += 'Sync_storage: \n'
+        if self.sync_storage is None:
+            result += 'None'
+        else:
+            for i, item in enumerate(self.sync_storage.blocks.items()):
+                result += f'\'{item[0]}\''
+                result += ':'
+                result += item[1].__repr__()
+                if i != len(self.sync_storage.blocks.items()) - 1:
+                    result += ',\n'
+                else:
+                    result += '.\n'
+        return result
+
+    def to_key(self, tags) -> str:
         result = ''
         if self.node_state_dict.get(0) is None:
             result += 'None'
         else:
-            result += self.node_state_dict.get(0).to_string(tags)
+            result += self.node_state_dict.get(0).to_key(tags)
         if self.node_state_dict.get(1) is None:
             result += ',None'
         else:
             result += ','
-            result += self.node_state_dict.get(1).to_string(tags)
+            result += self.node_state_dict.get(1).to_key(tags)
         if self.node_state_dict.get(2) is None:
             result += ',None'
         else:
             result += ','
-            result += self.node_state_dict.get(2).to_string(tags)
+            result += self.node_state_dict.get(2).to_key(tags)
         if self.node_state_dict.get(3) is None:
             result += ',None'
         else:
             result += ','
-            result += self.node_state_dict.get(3).to_string(tags)
+            result += self.node_state_dict.get(3).to_key(tags)
         if self.node_state_dict.get(4) is None:
             result += ',None'
         else:
             result += ','
-            result += self.node_state_dict.get(4).to_string(tags)
+            result += self.node_state_dict.get(4).to_key(tags)
+        result += ','
+        if self.sync_storage is None:
+            result += 'None.'
+        else:
+            for i, item in enumerate(self.sync_storage.blocks.items()):
+                result += f'\'{item[0]}\''
+                result += ':'
+                result += item[1].for_key()
+                if i != len(self.sync_storage.blocks.items()) - 1:
+                    result += ','
+                else:
+                    result += '.'
         return result
 
 
@@ -139,6 +193,38 @@ class NodeState:
             else:
                 result += f', message_to_send:{sorted(self.message_to_send, key=lambda x: x.for_sort())}'
         result += f')'
+        return result
+
+    def to_key(self, tags) -> str:
+        # 1 round
+        # 2 highest_qc
+        # 3 highest_qc_round
+        # 4 last_voted_round
+        # 5 preferred_round
+        # 6 committed
+        # 7 message_to_send
+        result = f'{self.node_name}'
+        if '1' in tags:
+            result += f',{self.round}'
+        if '2' in tags:
+            result += f',{self.highest_qc}'
+        if '3' in tags:
+            result += f',{self.highest_qc_round}'
+        if '4' in tags:
+            result += f',{self.last_voted_round}'
+        if '5' in tags:
+            result += f',{self.preferred_round}'
+        if '6' in tags:
+            committed = sorted(self.committed, key=lambda x: x.for_sort())
+            keys = [i.for_key() for i in committed]
+            result += f',{keys}'
+        if '7' in tags:
+            if self.message_to_send is None:
+                result += f',None'
+            else:
+                message_to_send = sorted(self.message_to_send, key=lambda x: x.for_sort())
+                keys = [i.for_key() for i in message_to_send]
+                result += f',{keys}'
         return result
 
     def get_votes_str(self):
