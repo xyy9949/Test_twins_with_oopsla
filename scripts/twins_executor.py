@@ -1,7 +1,7 @@
 import json
 import sys
 from copy import deepcopy
-sys.path.append('E:\\bft_testing\\Test_twins_with_oopsla\\scheduler')
+sys.path.append('/home/XieYiYang/test_twins_with_oopsla/')
 from scheduler.SaveState import *
 from os.path import join
 import argparse
@@ -15,6 +15,7 @@ from sim.network import SyncModel
 from scheduler.NodeFailureSettings import NodeFailureSettings
 from scheduler.NodeFailureSettings import NodeFailure
 from streamlet.node import StreamletNode
+import time
 
 
 class TwinsRunner:
@@ -47,7 +48,10 @@ class TwinsRunner:
             f'and {len(self.scenarios)} scenarios.'
         )
 
-    def run(self):
+    def run(self, tags, T1):
+        self.focus_tags = tags
+        self.run_over_flag = False
+        self.round_state_num = list()
 
         model = SyncModel()
         network = TwinsNetwork(
@@ -60,7 +64,7 @@ class TwinsRunner:
         [network.add_node(n) for n in nodes]
 
         for i in range(3, self.num_of_rounds + 1):
-            if i == 4:
+            if i == 8 or self.run_over_flag:
                 break
             runner.run_one_round(i, network)
 
@@ -92,18 +96,32 @@ class TwinsRunner:
 
                 if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
                     file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
-                    if self.print_log_times <= 99:
-                        self._print_log(file_path, network)
-                        self.print_log_times += 1
+                    self.run_over_flag = True
+                    # if self.print_log_times <= 99:
+                    #     self._print_log(file_path, network)
+                    #     self.print_log_times += 1
                 for n in network.nodes.values():
                     n.log.__init__()
                 logging.info(
-                    f'round-{current_round}-used_state-{j}-failure-{i} finished.There are already'
+                    f'-focustags-{self.focus_tags}-round-{current_round}-used_state-{j}/{len(self.last_dict_set)}-failure-{i} finished.There are already'
                     f' {len(self.new_dict_set)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
                 network.node_states = PhaseState()
                 network.trace = []
+
+                if self.run_over_flag:
+                    break
+            if self.run_over_flag or (current_round == 7 and j > 3000):
+                break
         self.last_dict_set = self.new_dict_set
-        self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
+        # self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
+        self.round_state_num.append(len(self.new_dict_set))
+        str_tags = ''.join(self.focus_tags)
+        if current_round == 7:
+            T2 =time.time()
+            if self.run_over_flag:
+                self.print_states_in_every_round(join(self.log_path, f'tags-{str_tags}-find safety-violating-spend time-{T2 - T1}'))
+            else:
+                self.print_states_in_every_round(join(self.log_path, f'tags-{str_tags}-do not find safety-violating-spend time-{T2 - T1}'))
         self.new_dict_set = dict()
         self.fail_states_dict_set = dict()
 
@@ -154,6 +172,13 @@ class TwinsRunner:
         node.storage.committed = deepcopy(node_state.committed)
         node.storage.votes = deepcopy(node_state.votes)
         node.message_to_send = deepcopy(node_state.message_to_send)
+
+    def print_states_in_every_round(self, file_path):
+        data = [f'The state number generated in every round is:\n\n']
+        for i, num in enumerate(self.round_state_num):
+            data += [f'round{i + 3}-{num}states_num\n']
+        with open(file_path, 'w') as f:
+            f.write(''.join(data))
 
     def _print_state(self, file_path):
         phase_state_set = self.new_dict_set
@@ -292,4 +317,63 @@ if __name__ == '__main__':
     runner.seed = int(args.seed)
     runner.focus_tags = args.focus.split(',')  # num list
 
-    runner.run()
+
+    runner.focus_tags_list = list()
+    ll = ['1', '2', '3', '4', '5', '6', '7']
+    for i in range(1, 8):
+        if i == 1:
+            # continue
+            for j in range(7):
+                new_l = [ll[j]]
+                runner.focus_tags_list.append(new_l)
+        elif i == 2:
+            # continue
+            for j in range(7):
+                for k in range(j + 1, 7):
+                    new_l = [ll[j], ll[k]]
+                    runner.focus_tags_list.append(new_l)
+        elif i == 3:
+            # continue
+            for j in range(7):
+                for k in range(j + 1, 7):
+                    for l in range(k + 1, 7):
+                        if j == 0 and k == 1 and l != 6:
+                            continue
+                        new_l = [ll[j], ll[k], ll[l]]
+                        runner.focus_tags_list.append(new_l)
+        elif i == 4:
+            for j in range(7):
+                for k in range(j + 1, 7):
+                    for l in range(k + 1, 7):
+                        for m in range(l + 1, 7):
+                            new_l = [ll[j], ll[k], ll[l], ll[m]]
+                            runner.focus_tags_list.append(new_l)
+        elif i == 5:
+            for j in range(7):
+                for k in range(j + 1, 7):
+                    for l in range(k + 1, 7):
+                        for m in range(l + 1, 7):
+                            for n in range(m + 1, 7):
+                                new_l = [ll[j], ll[k], ll[l], ll[m], ll[n]]
+                                runner.focus_tags_list.append(new_l)
+        elif i == 6:
+            for j in range(7):
+                for k in range(j + 1, 7):
+                    for l in range(k + 1, 7):
+                        for m in range(l + 1, 7):
+                            for n in range(m + 1, 7):
+                                for o in range(n + 1, 7):
+                                    new_l = [ll[j], ll[k], ll[l], ll[m], ll[n], ll[o]]
+                                    runner.focus_tags_list.append(new_l)
+        else:
+            new_l = ['1', '2', '3', '4', '5', '6', '7']
+            runner.focus_tags_list.append(new_l)
+
+    # T1 = time.time()
+    # runner.run(['1','2','3','4','5','6','7'], T1)
+    # runner.focus_tags = args.focus.split(',')  # num list
+    for tags in runner.focus_tags_list:
+        T1 = time.time()
+        runner.run(tags, T1)
+
+

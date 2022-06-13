@@ -19,7 +19,7 @@ class NodeFailureSettings:
         failures = []
         for failure_num in range(self.depth):
             failure = []
-            bin_num = bin(failure_num).removeprefix('0b')
+            bin_num = bin(failure_num)[2:]
             for j in range(self.bin_num_len - len(bin_num)):
                 bin_num = '0' + bin_num
             for i in range(self.bin_num_len):
