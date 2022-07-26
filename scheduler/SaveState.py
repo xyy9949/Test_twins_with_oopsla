@@ -1,5 +1,6 @@
 class PhaseState:
     def __init__(self):
+        self.round = None
         self.node_state_dict = dict()
         self.sync_storage = None
 

@@ -26,8 +26,7 @@ class TwinsRunner:
         self.log_path = log_path
         self.NodeClass = NodeClass
         self.node_args = node_args
-        self.last_dict = dict()
-        self.new_dict = dict()
+        self.list_of_dict = []
         self.state_queue = deque()
         self.fail_states_dict_set = dict()
         self.focus_tags = None
@@ -42,7 +41,7 @@ class TwinsRunner:
         self.num_of_rounds = num_of_rounds
         self.seed = None
         self.failures = None
-        self.print_log_times = 0
+        self.failed_times = 0
         logging.debug(f'Scenario file {args.path} successfully loaded.')
         logging.info(
             f'Settings: {self.num_of_nodes} nodes, {self.num_of_twins} twins, '
@@ -61,17 +60,14 @@ class TwinsRunner:
         [n.set_le(TwinsLE(n, network, [0, 4])) for n in nodes]
         [network.add_node(n) for n in nodes]
 
-        for i in range(3, self.num_of_rounds + 1):
-            if i == 3:
-                self.init_dict_set()
-            runner.run_one_round(i, network)
+        runner.run_(network)
 
-    def run_one_round(self, current_round, network):
-        # list of list
-        node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
-        self.failures = node_failure_setting.failures
-
-        for j, phase_state in enumerate(self.last_dict.values()):
+    def run_(self, network):
+        while len(self.state_queue) != 0:
+            phase_state = self.state_queue.popleft()
+            current_round = phase_state.round
+            node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
+            self.failures = node_failure_setting.failures
             for i, failure in enumerate(self.failures):
                 self.init_network_nodes(network, phase_state, current_round)
                 # run one phase
@@ -81,29 +77,32 @@ class TwinsRunner:
                 self.fix_none_state(network)
                 new_phase_state = deepcopy(network.node_states)
                 new_phase_state.sync_storage = deepcopy(next(iter(network.nodes.values())).sync_storage)
+                new_phase_state.round = current_round + 1
                 """ add states_safety_check and store the safety check failure states """
-                if self.duplicate_checking(self.new_dict, new_phase_state) is False:
+                if self.duplicate_checking(self.list_of_dict[current_round], new_phase_state) is False:
                     if self.states_safety_check(new_phase_state) is True:
-                        self.new_dict.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        self.list_of_dict[current_round].setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
                     else:
                         self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
 
                 if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
-                    file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
-                    if self.print_log_times <= 99:
+                    file_path = join(self.log_path, f'failure-violating-{self.failed_times}.log')
+                    if self.failed_times <= 99:
                         self._print_log(file_path, network)
-                        self.print_log_times += 1
+                        self.failed_times += 1
                 for n in network.nodes.values():
                     n.log.__init__()
-                logging.info(
-                    f'round-{current_round}-used_state-{j}-failure-{i} finished.There are already'
-                    f' {len(self.new_dict)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
+                # logging.info(
+                #     f'round-{current_round}-used_state-{j}-failure-{i} finished.There are already'
+                #     f' {len(self.new_dict)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
                 network.node_states = PhaseState()
                 network.trace = []
-        self.last_dict = self.new_dict
-        self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
-        self.new_dict = dict()
+            self.add_state_queue()
+        # self._print_state()
         self.fail_states_dict_set = dict()
+
+    def add_state_queue(self):
+        print()
 
     def duplicate_checking(self, dict_set, new_phase_state):
         if dict_set.get(new_phase_state.to_key(self.focus_tags)) is not None:
@@ -112,9 +111,8 @@ class TwinsRunner:
             return False
 
     def init_dict_set(self):
-        self.last_dict = dict()
         ps = PhaseState()
-        self.last_dict.setdefault(ps.to_key(self.focus_tags), PhaseState())
+        self.state_queue.append(ps)
 
     def fix_none_state(self, network):
         # phase state is dict of NodeState
@@ -154,11 +152,12 @@ class TwinsRunner:
         node.message_to_send = deepcopy(node_state.message_to_send)
 
     def _print_state(self, file_path):
-        phase_state_set = self.new_dict
+        # join(self.log_path, f'round-{current_round}-generate-states-num.log')
+        phase_state_set = self.list_of_dict[0]
         fail_phase_state_set = self.fail_states_dict_set
         phase_state_list = list(phase_state_set.values())
         fail_phase_state_list = list(fail_phase_state_set.values())
-        num = len(self.new_dict)
+        num = len(self.list_of_dict[0])
         fail_num = len(self.fail_states_dict_set)
         data = [f'All phases of this round end, found {fail_num} safety-violating states and '
                 f'generated {num} legal states.\n##################################\nThe following are top 10 of {fail_num} safety'
@@ -283,6 +282,9 @@ if __name__ == '__main__':
     sync_storage = SyncStorage()
     rounds_of_protocol = int(args.num_of_protocol)
     runner = TwinsRunner(rounds_of_protocol, args.path, FHSNode, [sync_storage], log_path=args.log)
+
+    for i in range(rounds_of_protocol-2):
+        runner.list_of_dict.append(dict())
 
     # how many failures in one scenario
     runner.depth = int(args.depth)
