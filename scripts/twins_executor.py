@@ -14,6 +14,7 @@ from twins.twins import TwinsNetwork, TwinsLE
 from sim.network import SyncModel
 from scheduler.NodeFailureSettings import NodeFailureSettings
 from scheduler.NodeFailureSettings import NodeFailure
+from collections import deque
 from streamlet.node import StreamletNode
 
 
@@ -25,8 +26,9 @@ class TwinsRunner:
         self.log_path = log_path
         self.NodeClass = NodeClass
         self.node_args = node_args
-        self.last_dict_set = dict()
-        self.new_dict_set = dict()
+        self.last_dict = dict()
+        self.new_dict = dict()
+        self.state_queue = deque()
         self.fail_states_dict_set = dict()
         self.focus_tags = None
 
@@ -60,8 +62,8 @@ class TwinsRunner:
         [network.add_node(n) for n in nodes]
 
         for i in range(3, self.num_of_rounds + 1):
-            if i == 4:
-                break
+            if i == 3:
+                self.init_dict_set()
             runner.run_one_round(i, network)
 
     def run_one_round(self, current_round, network):
@@ -69,10 +71,7 @@ class TwinsRunner:
         node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
         self.failures = node_failure_setting.failures
 
-        if current_round == 3:
-            self.init_dict_set()
-
-        for j, phase_state in enumerate(self.last_dict_set.values()):
+        for j, phase_state in enumerate(self.last_dict.values()):
             for i, failure in enumerate(self.failures):
                 self.init_network_nodes(network, phase_state, current_round)
                 # run one phase
@@ -83,10 +82,9 @@ class TwinsRunner:
                 new_phase_state = deepcopy(network.node_states)
                 new_phase_state.sync_storage = deepcopy(next(iter(network.nodes.values())).sync_storage)
                 """ add states_safety_check and store the safety check failure states """
-                if self.duplicate_checking(self.new_dict_set, new_phase_state) is False:
-                    print(new_phase_state.to_key(self.focus_tags))
+                if self.duplicate_checking(self.new_dict, new_phase_state) is False:
                     if self.states_safety_check(new_phase_state) is True:
-                        self.new_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        self.new_dict.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
                     else:
                         self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
 
@@ -99,12 +97,12 @@ class TwinsRunner:
                     n.log.__init__()
                 logging.info(
                     f'round-{current_round}-used_state-{j}-failure-{i} finished.There are already'
-                    f' {len(self.new_dict_set)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
+                    f' {len(self.new_dict)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
                 network.node_states = PhaseState()
                 network.trace = []
-        self.last_dict_set = self.new_dict_set
+        self.last_dict = self.new_dict
         self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
-        self.new_dict_set = dict()
+        self.new_dict = dict()
         self.fail_states_dict_set = dict()
 
     def duplicate_checking(self, dict_set, new_phase_state):
@@ -114,9 +112,9 @@ class TwinsRunner:
             return False
 
     def init_dict_set(self):
-        self.last_dict_set = dict()
+        self.last_dict = dict()
         ps = PhaseState()
-        self.last_dict_set.setdefault(ps.to_key(self.focus_tags), PhaseState())
+        self.last_dict.setdefault(ps.to_key(self.focus_tags), PhaseState())
 
     def fix_none_state(self, network):
         # phase state is dict of NodeState
@@ -156,11 +154,11 @@ class TwinsRunner:
         node.message_to_send = deepcopy(node_state.message_to_send)
 
     def _print_state(self, file_path):
-        phase_state_set = self.new_dict_set
+        phase_state_set = self.new_dict
         fail_phase_state_set = self.fail_states_dict_set
         phase_state_list = list(phase_state_set.values())
         fail_phase_state_list = list(fail_phase_state_set.values())
-        num = len(self.new_dict_set)
+        num = len(self.new_dict)
         fail_num = len(self.fail_states_dict_set)
         data = [f'All phases of this round end, found {fail_num} safety-violating states and '
                 f'generated {num} legal states.\n##################################\nThe following are top 10 of {fail_num} safety'
