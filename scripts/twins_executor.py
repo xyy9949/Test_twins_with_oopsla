@@ -32,6 +32,7 @@ class TwinsRunner:
         self.temp_dict = dict()
         self.fail_states_dict_set = dict()
         self.focus_tags = None
+        self.top = None
 
         with open(file_path) as f:
             data = load(f)
@@ -65,13 +66,14 @@ class TwinsRunner:
         runner.run_(network)
 
     def run_(self, network):
+        self.init_queue()
         while len(self.state_queue) != 0:
             phase_state = self.state_queue.popleft()
-            current_round = phase_state.round
+            current_round = phase_state.round + 1
             node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
             self.failures = node_failure_setting.failures
             for i, failure in enumerate(self.failures):
-                self.init_network_nodes(network, phase_state, current_round)
+                self.set_network_phase_state(network, phase_state, current_round)
                 # run one phase
                 network.failure = failure
                 network.env = simpy.Environment()
@@ -79,9 +81,11 @@ class TwinsRunner:
                 self.fix_none_state(network)
                 new_phase_state = deepcopy(network.node_states)
                 new_phase_state.sync_storage = deepcopy(next(iter(network.nodes.values())).sync_storage)
-                new_phase_state.round = current_round + 1
-                new_phase_state.set_votes_abs()
-                new_phase_state.set_if_bk_same()
+                new_phase_state.round = current_round
+                if current_round % 2 == 1:
+                    new_phase_state.set_votes_abs()
+                else:
+                    new_phase_state.set_if_bk_same()
                 """ add states_safety_check and store the safety check failure states """
                 if self.duplicate_checking(self.list_of_dict[current_round - 3], new_phase_state) is False:
                     if self.states_safety_check(new_phase_state) is True:
@@ -112,8 +116,12 @@ class TwinsRunner:
         # extend
         po = PrioritySorting(current_round, self.temp_dict)
         sorted_list = po.sorted_state_list
-        sub_list_front = sorted_list[0,5]
-        sub_list_tail = sorted_list[5:]
+        if len(sorted_list) < 5:
+            sub_list_front = sorted_list
+            sub_list_tail = []
+        else:
+            sub_list_front = sorted_list[0:5]
+            sub_list_tail = sorted_list[5:]
         self.state_queue.extendleft(sub_list_front)
         self.state_queue.extendleft(sub_list_tail)
 
@@ -140,7 +148,12 @@ class TwinsRunner:
                                            node.storage.committed, node.storage.votes, None)
                     node_state_dict.update({node.name: none_state})
 
-    def init_network_nodes(self, network, phase_state, current_round):
+    def init_queue(self):
+        ps = PhaseState()
+        ps.round = 2
+        self.state_queue.append(ps)
+
+    def set_network_phase_state(self, network, phase_state, current_round):
         if current_round == 3:
             for x in network.nodes.values():
                 x.last_voted_round = 2
@@ -304,5 +317,6 @@ if __name__ == '__main__':
     # random seed
     runner.seed = int(args.seed)
     runner.focus_tags = args.focus.split(',')  # num list
+    runner.top = 5
 
     runner.run()

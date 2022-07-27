@@ -6,7 +6,7 @@ class PrioritySorting:
         self.sorted_state_list = self.get_sorted_dict()
 
     def get_sorted_dict(self):
-        if self.current_round % 2 == 0:
+        if self.current_round % 2 == 1:
             return self.get_sorted_dict_vote()
         else:
             return self.get_sorted_dict_block()

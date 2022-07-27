@@ -3,7 +3,7 @@ class PhaseState:
         self.round = None
         self.node_state_dict = dict()
         self.sync_storage = None
-        self.votes_abs = None
+        self.votes_abs = 999
         self.if_bk_same = 1
 
     def set_votes_abs(self):
@@ -24,7 +24,7 @@ class PhaseState:
     def set_if_bk_same(self):
         bh1 = None
         for i, node_state in enumerate(self.node_state_dict.values()):
-            if len(node_state.message_to_send) > 0:
+            if node_state.message_to_send is not None and len(node_state.message_to_send) > 0:
                 block_hash = str(node_state.message_to_send[0].qc)
                 if bh1 is None:
                     bh1 = block_hash
