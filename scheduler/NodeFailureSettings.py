@@ -66,32 +66,32 @@ class NodeFailureSettings:
         failure.append(NodeFailure(4, 0))
         failures.append(failure)
 
-        # # round 5
-        # failure = []
-        # failure.append(NodeFailure(4, 0))
-        # failure.append(NodeFailure(4, 1))
-        # failure.append(NodeFailure(4, 2))
-        # failure.append(NodeFailure(0, 3))
-        # failure.append(NodeFailure(0, 4))
-        # failures.append(failure)
-        #
-        # # round 6
-        # failure = []
-        # failure.append(NodeFailure(0, 4))
-        # failure.append(NodeFailure(1, 4))
-        # failure.append(NodeFailure(2, 4))
-        # failure.append(NodeFailure(3, 0))
-        # failure.append(NodeFailure(4, 0))
-        # failures.append(failure)
-        #
-        # # round 7
-        # failure = []
-        # failure.append(NodeFailure(4, 0))
-        # failure.append(NodeFailure(4, 1))
-        # failure.append(NodeFailure(0, 2))
-        # failure.append(NodeFailure(0, 3))
-        # failure.append(NodeFailure(0, 4))
-        # failures.append(failure)
+        # round 5
+        failure = []
+        failure.append(NodeFailure(4, 0))
+        failure.append(NodeFailure(4, 1))
+        failure.append(NodeFailure(4, 2))
+        failure.append(NodeFailure(0, 3))
+        failure.append(NodeFailure(0, 4))
+        failures.append(failure)
+
+        # round 6
+        failure = []
+        failure.append(NodeFailure(0, 4))
+        failure.append(NodeFailure(1, 4))
+        failure.append(NodeFailure(2, 4))
+        failure.append(NodeFailure(3, 0))
+        failure.append(NodeFailure(4, 0))
+        failures.append(failure)
+
+        # round 7
+        failure = []
+        failure.append(NodeFailure(4, 0))
+        failure.append(NodeFailure(4, 1))
+        failure.append(NodeFailure(0, 2))
+        failure.append(NodeFailure(0, 3))
+        failure.append(NodeFailure(0, 4))
+        failures.append(failure)
 
         return failures
 

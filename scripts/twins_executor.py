@@ -73,8 +73,6 @@ class TwinsRunner:
             print(len(self.state_queue))
             phase_state = self.state_queue.popleft()
             current_round = phase_state.round + 1
-            if current_round > 7:
-                break
             node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
             self.failures = node_failure_setting.failures
             for i, failure in enumerate(self.failures):
@@ -121,6 +119,8 @@ class TwinsRunner:
         self.fail_states_dict_set = dict()
 
     def add_state_queue(self, current_round):
+        if current_round == 7:
+            return
         # sort
         # extend
         po = PrioritySorting(current_round, self.temp_dict)
@@ -133,7 +133,7 @@ class TwinsRunner:
             sub_list_front = sorted_list[0:5]
             sub_list_tail = sorted_list[5:]
         self.state_queue.extendleft(sub_list_front)
-        self.state_queue.extendleft(sub_list_tail)
+        self.state_queue.extend(sub_list_tail)
         self.straight_times = len(sub_list_front)
 
     def duplicate_checking(self, dict_set, new_phase_state):
