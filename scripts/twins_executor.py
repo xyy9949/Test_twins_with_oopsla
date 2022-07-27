@@ -45,6 +45,7 @@ class TwinsRunner:
         self.seed = None
         self.failures = None
         self.failed_times = 0
+        self.straight_times = 1
         logging.debug(f'Scenario file {args.path} successfully loaded.')
         logging.info(
             f'Settings: {self.num_of_nodes} nodes, {self.num_of_twins} twins, '
@@ -67,9 +68,13 @@ class TwinsRunner:
 
     def run_(self, network):
         self.init_queue()
+
         while len(self.state_queue) != 0:
+            print(len(self.state_queue))
             phase_state = self.state_queue.popleft()
             current_round = phase_state.round + 1
+            if current_round > 7:
+                break
             node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
             self.failures = node_failure_setting.failures
             for i, failure in enumerate(self.failures):
@@ -94,6 +99,7 @@ class TwinsRunner:
                         self.temp_dict.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
                     else:
                         self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        print("hahaha")
 
                 if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
                     file_path = join(self.log_path, f'failure-violating-{self.failed_times}.log')
@@ -107,7 +113,10 @@ class TwinsRunner:
                 #     f' {len(self.new_dict)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
                 network.node_states = PhaseState()
                 network.trace = []
-            self.add_state_queue(current_round)
+            self.straight_times -= 1
+            if self.straight_times == 0:
+                self.add_state_queue(current_round)
+
         # self._print_state()
         self.fail_states_dict_set = dict()
 
@@ -115,6 +124,7 @@ class TwinsRunner:
         # sort
         # extend
         po = PrioritySorting(current_round, self.temp_dict)
+        self.temp_dict = dict()
         sorted_list = po.sorted_state_list
         if len(sorted_list) < 5:
             sub_list_front = sorted_list
@@ -124,6 +134,7 @@ class TwinsRunner:
             sub_list_tail = sorted_list[5:]
         self.state_queue.extendleft(sub_list_front)
         self.state_queue.extendleft(sub_list_tail)
+        self.straight_times = len(sub_list_front)
 
     def duplicate_checking(self, dict_set, new_phase_state):
         if dict_set.get(new_phase_state.to_key(self.focus_tags)) is not None:
