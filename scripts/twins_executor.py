@@ -1,4 +1,5 @@
 import json
+import operator
 import sys
 from copy import deepcopy
 sys.path.append('/home/XieYiYang/test_twins_with_oopsla/')
@@ -30,6 +31,8 @@ class TwinsRunner:
         self.new_dict_set = dict()
         self.fail_states_dict_set = dict()
         self.focus_tags = None
+        # TODO:
+        self.pre_pick_num = 5
 
         with open(file_path) as f:
             data = load(f)
@@ -76,54 +79,85 @@ class TwinsRunner:
         if current_round == 3:
             self.init_dict_set()
 
-        for j, phase_state in enumerate(self.last_dict_set.values()):
-            for i, failure in enumerate(self.failures):
-                self.init_network_nodes(network, phase_state, current_round)
-                # run one phase
-                network.failure = failure
-                network.env = simpy.Environment()
-                network.run(150, current_round)
-                self.fix_none_state(network)
-                new_phase_state = deepcopy(network.node_states)
-                new_phase_state.sync_storage = deepcopy(next(iter(network.nodes.values())).sync_storage)
-                """ add states_safety_check and store the safety check failure states """
-                if self.duplicate_checking(self.new_dict_set, new_phase_state) is False:
-                    print(new_phase_state.to_key(self.focus_tags))
-                    if self.states_safety_check(new_phase_state) is True:
-                        self.new_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+        while self.last_dict_set.__len__() != 0:
+            for j, phase_state in enumerate(self.last_dict_set.values()):
+                # TODO: only run pre_pick_num times
+                if j >= self.pre_pick_num:
+                    break
+                # TODO: get tmp_round
+                if phase_state.node_state_dict.__len__() == 0:
+                    tmp_round = 3
+                else:
+                    tmp_round = phase_state.node_state_dict[0].round
+
+                for i, failure in enumerate(self.failures):
+                    self.init_network_nodes(network, phase_state, tmp_round)
+                    # run one phase
+                    network.failure = failure
+                    network.env = simpy.Environment()
+                    network.run(150, tmp_round)
+                    self.fix_none_state(network)
+
+                    # TODO: calculate vote_abs or is_bk_same
+                    if tmp_round % 2 == 1:
+                        self.get_votes_abs(network.node_states)
                     else:
-                        self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        self.get_is_bk_same(network.node_states)
+                    new_phase_state = deepcopy(network.node_states)
+                    new_phase_state.sync_storage = deepcopy(next(iter(network.nodes.values())).sync_storage)
+                    """ add states_safety_check and store the safety check failure states """
+                    if self.duplicate_checking(self.new_dict_set, new_phase_state) is False:
+                        print(new_phase_state.to_key(self.focus_tags))
+                        if self.states_safety_check(new_phase_state) is True:
+                            # TODO: do not need to add to the dict if round = 7
+                            if tmp_round < 7:
+                                self.new_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        else:
+                            self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                            # TODO: quit once find safety violating
+                            self.run_over_flag = True
+                    # if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
+                    #     file_path = join(self.log_path, f'round-{tmp_round}-state-{j}-failure-{i}.log')
+                    #     self.run_over_flag = True
+                    #     if self.print_log_times <= 99:
+                    #         self._print_log(file_path, network)
+                    #         self.print_log_times += 1
+                    # for n in network.nodes.values():
+                    #     n.log.__init__()
+                    logging.info(
+                        f'-focustags-{self.focus_tags}-round-{tmp_round}-used_state-{j}/{len(self.last_dict_set)}-failure-{i} finished.There are already'
+                        f' {len(self.new_dict_set)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
+                    network.node_states = PhaseState()
+                    network.trace = []
 
-                if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
-                    file_path = join(self.log_path, f'round-{current_round}-state-{j}-failure-{i}.log')
-                    self.run_over_flag = True
-                    # if self.print_log_times <= 99:
-                    #     self._print_log(file_path, network)
-                    #     self.print_log_times += 1
-                for n in network.nodes.values():
-                    n.log.__init__()
-                logging.info(
-                    f'-focustags-{self.focus_tags}-round-{current_round}-used_state-{j}/{len(self.last_dict_set)}-failure-{i} finished.There are already'
-                    f' {len(self.new_dict_set)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
-                network.node_states = PhaseState()
-                network.trace = []
-
+                    if self.run_over_flag:
+                        break
                 if self.run_over_flag:
                     break
-            if self.run_over_flag or (current_round == 7 and j > 3000):
-                break
-        self.last_dict_set = self.new_dict_set
-        # self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
-        self.round_state_num.append(len(self.new_dict_set))
-        str_tags = ''.join(self.focus_tags)
-        if current_round == 7:
-            T2 =time.time()
+
+            # TODO: turn dict to list to sort(according to votes_abs or is_bk_same)
+            tuplelist = list(self.new_dict_set.items())
+            if tuplelist.__len__() != 0:
+                tmp_round = tuplelist[0][1].node_state_dict[0].round
+                if tmp_round % 2 == 0:
+                    tuplelist.sort(key=lambda x: x[1].votes_abs)
+                else:
+                    tuplelist.sort(key=lambda x: x[1].is_bk_same)
+            # TODO: put the new dict
+            self.last_dict_set = dict(dict(tuplelist), **self.last_dict_set)
+
+            # self._print_state(join(self.log_path, f'round-{current_round}-generate-states-num.log'))
+            self.round_state_num.append(len(self.new_dict_set))
+            str_tags = ''.join(self.focus_tags)
+            T2 = time.time()
             if self.run_over_flag:
                 self.print_states_in_every_round(join(self.log_path, f'tags-{str_tags}-find safety-violating-spend time-{T2 - T1}'))
-            else:
-                self.print_states_in_every_round(join(self.log_path, f'tags-{str_tags}-do not find safety-violating-spend time-{T2 - T1}'))
-        self.new_dict_set = dict()
-        self.fail_states_dict_set = dict()
+                break
+            # else:
+            #     self.print_states_in_every_round(join(self.log_path, f'tags-{str_tags}-do not find safety-violating-spend time-{T2 - T1}'))
+
+            # self.new_dict_set = dict()
+            # self.fail_states_dict_set = dict()
 
     def duplicate_checking(self, dict_set, new_phase_state):
         if dict_set.get(new_phase_state.to_key(self.focus_tags)) is not None:
@@ -288,6 +322,34 @@ class TwinsRunner:
                 longest = committed_list
         return True
 
+    def get_votes_abs(self, node_state):
+        bh1 = None
+        count = 0
+        for i, phase_state in enumerate(node_state.node_state_dict.values()):
+            if phase_state.message_to_send is not None:
+                block_hash = phase_state.message_to_send[0].block_hash
+                if bh1 is None:
+                    bh1 = block_hash
+                    count += 1
+                elif block_hash == bh1:
+                    count += 1
+                else:
+                    count -= 1
+        node_state.votes_abs = abs(count)
+
+    def get_is_bk_same(self, node_state):
+        bh1 = None
+        for i, phase_state in enumerate(node_state.node_state_dict.values()):
+            if len(phase_state.message_to_send) > 0:
+                block_hash = str(phase_state.message_to_send[0].qc)
+                if bh1 is None:
+                    bh1 = block_hash
+                elif block_hash == bh1:
+                    node_state.is_bk_same = 1
+                else:
+                    node_state.is_bk_same = 0
+            if i == 1:
+                break
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Twins Executor.')
@@ -322,18 +384,18 @@ if __name__ == '__main__':
     ll = ['1', '2', '3', '4', '5', '6', '7']
     for i in range(1, 8):
         if i == 1:
-            # continue
+            continue
             for j in range(7):
                 new_l = [ll[j]]
                 runner.focus_tags_list.append(new_l)
         elif i == 2:
-            # continue
+            continue
             for j in range(7):
                 for k in range(j + 1, 7):
                     new_l = [ll[j], ll[k]]
                     runner.focus_tags_list.append(new_l)
         elif i == 3:
-            # continue
+            continue
             for j in range(7):
                 for k in range(j + 1, 7):
                     for l in range(k + 1, 7):
@@ -342,6 +404,7 @@ if __name__ == '__main__':
                         new_l = [ll[j], ll[k], ll[l]]
                         runner.focus_tags_list.append(new_l)
         elif i == 4:
+            continue
             for j in range(7):
                 for k in range(j + 1, 7):
                     for l in range(k + 1, 7):
@@ -349,6 +412,7 @@ if __name__ == '__main__':
                             new_l = [ll[j], ll[k], ll[l], ll[m]]
                             runner.focus_tags_list.append(new_l)
         elif i == 5:
+            continue
             for j in range(7):
                 for k in range(j + 1, 7):
                     for l in range(k + 1, 7):
@@ -357,6 +421,7 @@ if __name__ == '__main__':
                                 new_l = [ll[j], ll[k], ll[l], ll[m], ll[n]]
                                 runner.focus_tags_list.append(new_l)
         elif i == 6:
+            continue
             for j in range(7):
                 for k in range(j + 1, 7):
                     for l in range(k + 1, 7):
@@ -369,11 +434,11 @@ if __name__ == '__main__':
             new_l = ['1', '2', '3', '4', '5', '6', '7']
             runner.focus_tags_list.append(new_l)
 
-    # T1 = time.time()
-    # runner.run(['1','2','3','4','5','6','7'], T1)
+    T1 = time.time()
+    runner.run(['1', '2', '3', '4', '5', '6', '7'], T1)
     # runner.focus_tags = args.focus.split(',')  # num list
-    for tags in runner.focus_tags_list:
-        T1 = time.time()
-        runner.run(tags, T1)
+    # for tags in runner.focus_tags_list:
+    #     T1 = time.time()
+    #     runner.run(tags, T1)
 
 

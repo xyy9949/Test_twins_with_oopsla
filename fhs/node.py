@@ -81,7 +81,7 @@ class FHSNode(Node):
 
         # Check if we can vote for the block.
         check = block.author in [0, 4]
-        check &= block.round > self.last_voted_round
+        check &= block.round >= self.last_voted_round
         check &= prev_block.round >= self.preferred_round
         if check:
             # checkpoint

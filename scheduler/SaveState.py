@@ -2,6 +2,10 @@ class PhaseState:
     def __init__(self):
         self.node_state_dict = dict()
         self.sync_storage = None
+        # calculate at the end of 3, 5, 7 round
+        self.votes_abs = None
+        # calculate at the end of 4, 6 round
+        self.is_bk_same = 1
 
     def __eq__(self, other):
         if self.node_state_dict.get(0) is None and other.node_state_dict.get(0) is not None:
