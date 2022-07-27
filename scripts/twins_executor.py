@@ -14,6 +14,7 @@ from twins.twins import TwinsNetwork, TwinsLE
 from sim.network import SyncModel
 from scheduler.NodeFailureSettings import NodeFailureSettings
 from scheduler.NodeFailureSettings import NodeFailure
+from strategy.PrioritySorting import PrioritySorting
 from collections import deque
 from streamlet.node import StreamletNode
 
@@ -28,6 +29,7 @@ class TwinsRunner:
         self.node_args = node_args
         self.list_of_dict = []
         self.state_queue = deque()
+        self.temp_dict = dict()
         self.fail_states_dict_set = dict()
         self.focus_tags = None
 
@@ -84,6 +86,8 @@ class TwinsRunner:
                 if self.duplicate_checking(self.list_of_dict[current_round - 3], new_phase_state) is False:
                     if self.states_safety_check(new_phase_state) is True:
                         self.list_of_dict[current_round - 3].setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        # no need to check duplicate
+                        self.temp_dict.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
                     else:
                         self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
 
@@ -99,12 +103,19 @@ class TwinsRunner:
                 #     f' {len(self.new_dict)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
                 network.node_states = PhaseState()
                 network.trace = []
-            self.add_state_queue()
+            self.add_state_queue(current_round)
         # self._print_state()
         self.fail_states_dict_set = dict()
 
-    def add_state_queue(self):
-        print()
+    def add_state_queue(self, current_round):
+        # sort
+        # extend
+        po = PrioritySorting(current_round, self.temp_dict)
+        sorted_list = po.sorted_state_list
+        sub_list_front = sorted_list[0,5]
+        sub_list_tail = sorted_list[5:]
+        self.state_queue.extendleft(sub_list_front)
+        self.state_queue.extendleft(sub_list_tail)
 
     def duplicate_checking(self, dict_set, new_phase_state):
         if dict_set.get(new_phase_state.to_key(self.focus_tags)) is not None:
