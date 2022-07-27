@@ -3,6 +3,35 @@ class PhaseState:
         self.round = None
         self.node_state_dict = dict()
         self.sync_storage = None
+        self.votes_abs = None
+        self.if_bk_same = 1
+
+    def set_votes_abs(self):
+        bh1 = None
+        count = 0
+        for i, node_state in enumerate(self.node_state_dict.values()):
+            if node_state.message_to_send is not None:
+                block_hash = node_state.message_to_send[0].block_hash
+                if bh1 is None:
+                    bh1 = block_hash
+                    count += 1
+                elif block_hash == bh1:
+                    count += 1
+                else:
+                    count -= 1
+        self.votes_abs = abs(count)
+
+    def set_if_bk_same(self):
+        bh1 = None
+        for i, node_state in enumerate(self.node_state_dict.values()):
+            if len(node_state.message_to_send) > 0:
+                block_hash = str(node_state.message_to_send[0].qc)
+                if bh1 is None:
+                    bh1 = block_hash
+                elif block_hash == bh1:
+                    self.if_bk_same = 1
+                else:
+                    self.if_bk_same = 0
 
     def __eq__(self, other):
         if self.node_state_dict.get(0) is None and other.node_state_dict.get(0) is not None:

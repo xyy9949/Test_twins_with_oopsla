@@ -78,10 +78,12 @@ class TwinsRunner:
                 new_phase_state = deepcopy(network.node_states)
                 new_phase_state.sync_storage = deepcopy(next(iter(network.nodes.values())).sync_storage)
                 new_phase_state.round = current_round + 1
+                new_phase_state.set_votes_abs()
+                new_phase_state.set_if_bk_same()
                 """ add states_safety_check and store the safety check failure states """
-                if self.duplicate_checking(self.list_of_dict[current_round], new_phase_state) is False:
+                if self.duplicate_checking(self.list_of_dict[current_round - 3], new_phase_state) is False:
                     if self.states_safety_check(new_phase_state) is True:
-                        self.list_of_dict[current_round].setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        self.list_of_dict[current_round - 3].setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
                     else:
                         self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
 

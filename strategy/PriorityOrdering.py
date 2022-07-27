@@ -11,16 +11,14 @@ class PriorityOrdering:
             return self.get_ordered_dict_block()
 
     def get_ordered_dict_vote(self):
-        self.dict = dict()
-        for item in self.dict.items():
-            item[0]
-        ordered_dict = dict()
-        # dict是元素为PhaseState的字典
-        # PhaseState是元素为NodeState的字典
-        # 全都投了且两种票型数量接近
-        return ordered_dict
+        state_list = list(self.dict.values())
+        if state_list.__len__() != 0:
+            state_list.sort(key=lambda x: x.votes_abs)
+        return state_list
 
     def get_ordered_dict_block(self):
-        ordered_dict = dict()
+        state_list = list(self.dict.values())
+        if state_list.__len__() != 0:
+            state_list.sort(key=lambda x: x.if_bk_same)
         # 全都投了且两种票型数量接近
-        return ordered_dict
+        return state_list
