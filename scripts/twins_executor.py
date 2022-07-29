@@ -16,6 +16,7 @@ from scheduler.NodeFailureSettings import NodeFailureSettings
 from scheduler.NodeFailureSettings import NodeFailure
 from strategy.PrioritySorting import PrioritySorting
 from collections import deque
+import datetime
 from streamlet.node import StreamletNode
 
 
@@ -70,7 +71,6 @@ class TwinsRunner:
         self.init_queue()
 
         while len(self.state_queue) != 0:
-            print(len(self.state_queue))
             phase_state = self.state_queue.popleft()
             current_round = phase_state.round + 1
             node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
@@ -93,10 +93,13 @@ class TwinsRunner:
                 if self.duplicate_checking(self.list_of_dict[current_round - 3], new_phase_state) is False:
                     if self.states_safety_check(new_phase_state) is True:
                         self.list_of_dict[current_round - 3].setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        print(new_phase_state.to_key(self.focus_tags))
                         # no need to check duplicate
                         self.temp_dict.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
                     else:
                         self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        # time = datetime.datetime.now()
+                        # print(time)
                         print("hahaha")
 
                 if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
@@ -114,17 +117,27 @@ class TwinsRunner:
             self.straight_times -= 1
             if self.straight_times == 0:
                 self.add_state_queue(current_round)
+            elif self.straight_times < 0:
+                self.add_state_queue_tail(current_round)
 
         # self._print_state()
         self.fail_states_dict_set = dict()
 
-    def add_state_queue(self, current_round):
+    def add_state_queue_tail(self, current_round):
+        state_list = list(self.temp_dict.values())
+        self.temp_dict = dict()
         if current_round == 7:
             return
+        self.state_queue.extend(state_list)
+
+
+    def add_state_queue(self, current_round):
         # sort
         # extend
         po = PrioritySorting(current_round, self.temp_dict)
         self.temp_dict = dict()
+        if current_round == 7:
+            return
         sorted_list = po.sorted_state_list
         if len(sorted_list) < 5:
             sub_list_front = sorted_list
@@ -299,6 +312,8 @@ class TwinsRunner:
 
 
 if __name__ == '__main__':
+    # time = datetime.datetime.now()
+    # print(time)
     parser = argparse.ArgumentParser(description='Twins Executor.')
     parser.add_argument('--num_of_protocol', help='num of protocol')
     parser.add_argument('--depth', help='depth')
@@ -328,6 +343,6 @@ if __name__ == '__main__':
     # random seed
     runner.seed = int(args.seed)
     runner.focus_tags = args.focus.split(',')  # num list
-    runner.top = 5
+    runner.top = 1
 
     runner.run()
