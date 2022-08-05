@@ -9,8 +9,8 @@ class NodeFailureSettings:
         self.bin_num_len = num_of_leaders * num_of_processes
         """ 最多生成depth个failure """
         self.depth = int(math.pow(2, self.bin_num_len))
-        # self.failures = self.get_failures()
-        self.failures = self.get_failures_of_twins()
+        self.failures = self.get_failures()
+        # self.failures = self.get_failures_of_twins()
 
     def get_random_failures(self):
         pass

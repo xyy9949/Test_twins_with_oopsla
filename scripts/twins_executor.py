@@ -1,5 +1,6 @@
 import json
 import sys
+import time
 from copy import deepcopy
 sys.path.append('E:\\bft_testing\\Test_twins_with_oopsla\\scheduler')
 from scheduler.SaveState import *
@@ -15,6 +16,7 @@ from sim.network import SyncModel
 from scheduler.NodeFailureSettings import NodeFailureSettings
 from scheduler.NodeFailureSettings import NodeFailure
 from strategy.PrioritySorting import PrioritySorting
+from strategy.RoundSorting import RoundSorting
 from collections import deque
 import datetime
 from streamlet.node import StreamletNode
@@ -31,6 +33,7 @@ class TwinsRunner:
         self.list_of_dict = []
         self.state_queue = deque()
         self.temp_dict = dict()
+        self.temp_list = [0, 0, 0, 0, 0] ## store num of different round in temp_dict
         self.fail_states_dict_set = dict()
         self.focus_tags = None
         self.top = None
@@ -69,13 +72,14 @@ class TwinsRunner:
 
     def run_(self, network):
         self.init_queue()
-
+        T1 = time.time()
         while len(self.state_queue) != 0:
             phase_state = self.state_queue.popleft()
             current_round = phase_state.round + 1
             node_failure_setting = NodeFailureSettings(self.num_of_nodes + self.num_of_twins, 2, current_round)
             self.failures = node_failure_setting.failures
             for i, failure in enumerate(self.failures):
+
                 self.set_network_phase_state(network, phase_state, current_round)
                 # run one phase
                 network.failure = failure
@@ -95,12 +99,17 @@ class TwinsRunner:
                         self.list_of_dict[current_round - 3].setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
                         print(new_phase_state.to_key(self.focus_tags))
                         # no need to check duplicate
-                        self.temp_dict.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        if current_round != 7:
+                            self.temp_dict.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                            self.temp_list[current_round - 3] += 1
                     else:
                         self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
                         # time = datetime.datetime.now()
                         # print(time)
                         print("hahaha")
+                        T2 = time.time()
+                        print(T2 - T1)
+                        return
 
                 if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
                     file_path = join(self.log_path, f'failure-violating-{self.failed_times}.log')
@@ -115,39 +124,54 @@ class TwinsRunner:
                 network.node_states = PhaseState()
                 network.trace = []
             self.straight_times -= 1
-            if self.straight_times == 0:
-                self.add_state_queue(current_round)
-            elif self.straight_times < 0:
-                self.add_state_queue_tail(current_round)
+            if self.straight_times == 0 or len(self.state_queue) == 0:
+                self.add_state_queue()
+            # elif self.straight_times < 0:
+            #     self.add_state_queue_tail()
 
         # self._print_state()
+        for i in range(5):
+            print(len(self.list_of_dict[i]))
+        T2 = time.time()
+        print("time:", T2 - T1)
         self.fail_states_dict_set = dict()
 
-    def add_state_queue_tail(self, current_round):
-        state_list = list(self.temp_dict.values())
-        self.temp_dict = dict()
-        if current_round == 7:
-            return
-        self.state_queue.extend(state_list)
+    # def add_state_queue_tail(self):
+    #     state_list = list(self.temp_dict.values())
+    #     self.temp_dict = dict()
+    #     # if current_round == 7:
+    #     #     return
+    #     self.state_queue.extend(state_list)
 
 
-    def add_state_queue(self, current_round):
+    def add_state_queue(self, ):
         # sort
         # extend
-        po = PrioritySorting(current_round, self.temp_dict)
+        rs = RoundSorting(self.temp_dict).sorted_state_list
+        start = 0
+        sorted_list = list()
+        for i in range(5):
+            round_num = self.temp_list[4 - i]
+            if round_num != 0:
+                li = rs[start:start + round_num]
+                start = start + round_num
+                po = PrioritySorting(7 - i, li).sorted_state_list
+                sorted_list += po
         self.temp_dict = dict()
-        if current_round == 7:
-            return
-        sorted_list = po.sorted_state_list
-        if len(sorted_list) < 5:
-            sub_list_front = sorted_list
-            sub_list_tail = []
-        else:
-            sub_list_front = sorted_list[0:5]
-            sub_list_tail = sorted_list[5:]
-        self.state_queue.extendleft(sub_list_front)
-        self.state_queue.extend(sub_list_tail)
-        self.straight_times = len(sub_list_front)
+        self.temp_list = [0, 0, 0, 0, 0]
+        # if current_round == 7:
+        #     return
+        self.state_queue.extendleft(sorted_list)
+        self.straight_times = self.top
+        # if len(sorted_list) < self.top:
+        #     sub_list_front = sorted_list
+        #     sub_list_tail = []
+        # else:
+        #     sub_list_front = sorted_list[0:self.top]
+        #     sub_list_tail = sorted_list[self.top:]
+        # self.state_queue.extendleft(sub_list_front)
+        # self.state_queue.extend(sub_list_tail)
+        # self.straight_times = len(sub_list_front)
 
     def duplicate_checking(self, dict_set, new_phase_state):
         if dict_set.get(new_phase_state.to_key(self.focus_tags)) is not None:
@@ -343,6 +367,6 @@ if __name__ == '__main__':
     # random seed
     runner.seed = int(args.seed)
     runner.focus_tags = args.focus.split(',')  # num list
-    runner.top = 1
+    runner.top = 5
 
     runner.run()
