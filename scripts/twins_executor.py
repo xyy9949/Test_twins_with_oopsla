@@ -161,6 +161,8 @@ class TwinsRunner:
         self.temp_list = [0, 0, 0, 0, 0]
         # if current_round == 7:
         #     return
+        # TODO：reverse the sorted_list
+        sorted_list.reverse()
         self.state_queue.extendleft(sorted_list)
         self.straight_times = self.top
         # if len(sorted_list) < self.top:
@@ -367,6 +369,6 @@ if __name__ == '__main__':
     # random seed
     runner.seed = int(args.seed)
     runner.focus_tags = args.focus.split(',')  # num list
-    runner.top = 5
+    runner.top = 4
 
     runner.run()
