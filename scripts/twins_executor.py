@@ -50,7 +50,7 @@ class TwinsRunner:
         self.seed = None
         self.failures = None
         self.failed_times = 0
-        self.straight_times = 1
+        self.run_times_before_add_queue = 1
         logging.debug(f'Scenario file {args.path} successfully loaded.')
         logging.info(
             f'Settings: {self.num_of_nodes} nodes, {self.num_of_twins} twins, '
@@ -119,30 +119,16 @@ class TwinsRunner:
                         self.failed_times += 1
                 for n in network.nodes.values():
                     n.log.__init__()
-                # logging.info(
-                #     f'round-{current_round}-used_state-{j}-failure-{i} finished.There are already'
-                #     f' {len(self.new_dict)} legal states and {len(self.fail_states_dict_set)} safety-violating states.')
                 network.node_states = PhaseState()
                 network.trace = []
-            self.straight_times -= 1
-            if self.straight_times == 0 or len(self.state_queue) == 0:
+            self.run_times_before_add_queue -= 1
+            if self.run_times_before_add_queue == 0 or len(self.state_queue) == 0:
                 self.add_state_queue()
-            # elif self.straight_times < 0:
-            #     self.add_state_queue_tail()
-
-        # self._print_state()
         for i in range(5):
             print(len(self.list_of_dict[i]))
         T2 = time.time()
         print("time:", T2 - T1)
         self.fail_states_dict_set = dict()
-
-    # def add_state_queue_tail(self):
-    #     state_list = list(self.temp_dict.values())
-    #     self.temp_dict = dict()
-    #     # if current_round == 7:
-    #     #     return
-    #     self.state_queue.extend(state_list)
 
     def add_state_queue(self):
         # sort
@@ -159,21 +145,10 @@ class TwinsRunner:
                 sorted_list += po
         self.temp_dict = dict()
         self.temp_list = [0, 0, 0, 0]
-        # if current_round == 7:
-        #     return
         # TODO：reverse the sorted_list
         sorted_list.reverse()
         self.state_queue.extendleft(sorted_list)
-        self.straight_times = self.top
-        # if len(sorted_list) < self.top:
-        #     sub_list_front = sorted_list
-        #     sub_list_tail = []
-        # else:
-        #     sub_list_front = sorted_list[0:self.top]
-        #     sub_list_tail = sorted_list[self.top:]
-        # self.state_queue.extendleft(sub_list_front)
-        # self.state_queue.extend(sub_list_tail)
-        # self.straight_times = len(sub_list_front)
+        self.run_times_before_add_queue = self.top
 
     def duplicate_checking(self, dict_set, new_phase_state):
         if dict_set.get(new_phase_state.to_key(self.focus_tags)) is not None:
