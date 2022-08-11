@@ -318,7 +318,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', help='seed')
     parser.add_argument('--path', help='path to the scenario file')
     parser.add_argument('--log', help='output log directory')
-    parser.add_argument('--topn', help='top n most propri')
+    parser.add_argument('--topn', help='number of most preferred states')
     args = parser.parse_args()
 
     # logging.basicConfig(
