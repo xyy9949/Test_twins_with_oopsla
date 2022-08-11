@@ -2,6 +2,7 @@ import json
 import sys
 import time
 from copy import deepcopy
+
 sys.path.append('E:\\bft_testing\\Test_twins_with_oopsla\\scheduler')
 from scheduler.SaveState import *
 from os.path import join
@@ -33,7 +34,7 @@ class TwinsRunner:
         self.list_of_dict = []
         self.state_queue = deque()
         self.temp_dict = dict()
-        self.temp_list = [0, 0, 0, 0, 0] ## store num of different round in temp_dict
+        self.temp_list = [0, 0, 0, 0]  # store num of different round in temp_dict
         self.fail_states_dict_set = dict()
         self.focus_tags = None
         self.top = None
@@ -96,8 +97,8 @@ class TwinsRunner:
                 """ add states_safety_check and store the safety check failure states """
                 if self.duplicate_checking(self.list_of_dict[current_round - 3], new_phase_state) is False:
                     if self.states_safety_check(new_phase_state) is True:
-                        self.list_of_dict[current_round - 3].setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
-                        print(new_phase_state.to_key(self.focus_tags))
+                        self.list_of_dict[current_round - 3].setdefault(new_phase_state.to_key(self.focus_tags),
+                                                                        new_phase_state)
                         # no need to check duplicate
                         if current_round != 7:
                             self.temp_dict.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
@@ -143,22 +144,21 @@ class TwinsRunner:
     #     #     return
     #     self.state_queue.extend(state_list)
 
-
-    def add_state_queue(self, ):
+    def add_state_queue(self):
         # sort
         # extend
         rs = RoundSorting(self.temp_dict).sorted_state_list
         start = 0
         sorted_list = list()
-        for i in range(5):
-            round_num = self.temp_list[4 - i]
+        for i in range(4):
+            round_num = self.temp_list[3 - i]
             if round_num != 0:
                 li = rs[start:start + round_num]
                 start = start + round_num
-                po = PrioritySorting(7 - i, li).sorted_state_list
+                po = PrioritySorting(6 - i, li).sorted_state_list
                 sorted_list += po
         self.temp_dict = dict()
-        self.temp_list = [0, 0, 0, 0, 0]
+        self.temp_list = [0, 0, 0, 0]
         # if current_round == 7:
         #     return
         # TODO：reverse the sorted_list
@@ -361,7 +361,7 @@ if __name__ == '__main__':
     rounds_of_protocol = int(args.num_of_protocol)
     runner = TwinsRunner(rounds_of_protocol, args.path, FHSNode, [sync_storage], log_path=args.log)
 
-    for i in range(rounds_of_protocol-2):
+    for i in range(rounds_of_protocol - 2):
         runner.list_of_dict.append(dict())
 
     # how many failures in one scenario
