@@ -33,32 +33,32 @@ class PhaseState:
                 else:
                     self.if_bk_same = 0
 
-    def to_string(self, tags) -> str:
+    def to_string(self) -> str:
         result = 'Node States: \n'
         if self.node_state_dict.get(0) is None:
             result += 'None,\n'
         else:
-            result += self.node_state_dict.get(0).to_string(tags)
+            result += self.node_state_dict.get(0).to_string()
             result += ',\n'
         if self.node_state_dict.get(1) is None:
             result += 'None,\n'
         else:
-            result += self.node_state_dict.get(1).to_string(tags)
+            result += self.node_state_dict.get(1).to_string()
             result += ',\n'
         if self.node_state_dict.get(2) is None:
             result += 'None,\n'
         else:
-            result += self.node_state_dict.get(2).to_string(tags)
+            result += self.node_state_dict.get(2).to_string()
             result += ',\n'
         if self.node_state_dict.get(3) is None:
             result += 'None,\n'
         else:
-            result += self.node_state_dict.get(3).to_string(tags)
+            result += self.node_state_dict.get(3).to_string()
             result += ',\n'
         if self.node_state_dict.get(4) is None:
             result += 'None,\n'
         else:
-            result += self.node_state_dict.get(4).to_string(tags)
+            result += self.node_state_dict.get(4).to_string()
             result += '.\n'
         result += 'Sync_storage: \n'
         if self.sync_storage is None:
@@ -74,32 +74,32 @@ class PhaseState:
                     result += '.\n'
         return result
 
-    def to_key(self, tags) -> str:
+    def to_key(self) -> str:
         result = ''
         if self.node_state_dict.get(0) is None:
             result += 'None'
         else:
-            result += self.node_state_dict.get(0).to_key(tags)
+            result += self.node_state_dict.get(0).to_key()
         if self.node_state_dict.get(1) is None:
             result += ',None'
         else:
             result += ','
-            result += self.node_state_dict.get(1).to_key(tags)
+            result += self.node_state_dict.get(1).to_key()
         if self.node_state_dict.get(2) is None:
             result += ',None'
         else:
             result += ','
-            result += self.node_state_dict.get(2).to_key(tags)
+            result += self.node_state_dict.get(2).to_key()
         if self.node_state_dict.get(3) is None:
             result += ',None'
         else:
             result += ','
-            result += self.node_state_dict.get(3).to_key(tags)
+            result += self.node_state_dict.get(3).to_key()
         if self.node_state_dict.get(4) is None:
             result += ',None'
         else:
             result += ','
-            result += self.node_state_dict.get(4).to_key(tags)
+            result += self.node_state_dict.get(4).to_key()
         result += ','
         if self.sync_storage is None:
             result += 'None.'
@@ -129,7 +129,7 @@ class NodeState:
         self.message_to_send = message_to_send
         self.dict_key = node_name
 
-    def to_string(self, tags) -> str:
+    def to_string(self) -> str:
         # 1 round
         # 2 highest_qc
         # 3 highest_qc_round
@@ -138,27 +138,20 @@ class NodeState:
         # 6 committed
         # 7 message_to_send
         result = f'NodeState(name:{self.node_name}'
-        if '1' in tags:
-            result += f', round:{self.round}'
-        if '2' in tags:
-            result += f', highest_qc:{self.highest_qc}'
-        if '3' in tags:
-            result += f', highest_qc_round:{self.highest_qc_round}'
-        if '4' in tags:
-            result += f', last_voted_round:{self.last_voted_round}'
-        if '5' in tags:
-            result += f', preferred_round:{self.preferred_round}'
-        if '6' in tags:
-            result += f', committed:{sorted(self.committed, key=lambda x: x.for_sort())}'
-        if '7' in tags:
-            if self.message_to_send is None:
-                result += f', message_to_send:None'
-            else:
-                result += f', message_to_send:{sorted(self.message_to_send, key=lambda x: x.for_sort())}'
+        result += f', round:{self.round}'
+        result += f', highest_qc:{self.highest_qc}'
+        result += f', highest_qc_round:{self.highest_qc_round}'
+        result += f', last_voted_round:{self.last_voted_round}'
+        result += f', preferred_round:{self.preferred_round}'
+        result += f', committed:{sorted(self.committed, key=lambda x: x.for_sort())}'
+        if self.message_to_send is None:
+            result += f', message_to_send:None'
+        else:
+            result += f', message_to_send:{sorted(self.message_to_send, key=lambda x: x.for_sort())}'
         result += f')'
         return result
 
-    def to_key(self, tags) -> str:
+    def to_key(self) -> str:
         # 1 round
         # 2 highest_qc
         # 3 highest_qc_round
@@ -167,27 +160,20 @@ class NodeState:
         # 6 committed
         # 7 message_to_send
         result = f'{self.node_name}'
-        if '1' in tags:
-            result += f',{self.round}'
-        if '2' in tags:
-            result += f',{self.highest_qc}'
-        if '3' in tags:
-            result += f',{self.highest_qc_round}'
-        if '4' in tags:
-            result += f',{self.last_voted_round}'
-        if '5' in tags:
-            result += f',{self.preferred_round}'
-        if '6' in tags:
-            committed = sorted(self.committed, key=lambda x: x.for_sort())
-            keys = [i.for_key() for i in committed]
+        result += f',{self.round}'
+        result += f',{self.highest_qc}'
+        result += f',{self.highest_qc_round}'
+        result += f',{self.last_voted_round}'
+        result += f',{self.preferred_round}'
+        committed = sorted(self.committed, key=lambda x: x.for_sort())
+        keys = [i.for_key() for i in committed]
+        result += f',{keys}'
+        if self.message_to_send is None:
+            result += f',None'
+        else:
+            message_to_send = sorted(self.message_to_send, key=lambda x: x.for_sort())
+            keys = [i.for_key() for i in message_to_send]
             result += f',{keys}'
-        if '7' in tags:
-            if self.message_to_send is None:
-                result += f',None'
-            else:
-                message_to_send = sorted(self.message_to_send, key=lambda x: x.for_sort())
-                keys = [i.for_key() for i in message_to_send]
-                result += f',{keys}'
         return result
 
     def get_votes_str(self):

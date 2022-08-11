@@ -26,7 +26,6 @@ from streamlet.node import StreamletNode
 class TwinsRunner:
     def __init__(self, num_of_rounds, file_path, NodeClass, node_args, log_path=None):
         self.safety_check = None
-        self.depth = None
         self.file_path = file_path
         self.log_path = log_path
         self.NodeClass = NodeClass
@@ -36,7 +35,6 @@ class TwinsRunner:
         self.temp_dict = dict()
         self.temp_list = [0, 0, 0, 0]  # store num of different round in temp_dict
         self.fail_states_dict_set = dict()
-        self.focus_tags = None
         self.top = None
 
         with open(file_path) as f:
@@ -97,14 +95,14 @@ class TwinsRunner:
                 """ add states_safety_check and store the safety check failure states """
                 if self.duplicate_checking(self.list_of_dict[current_round - 3], new_phase_state) is False:
                     if self.states_safety_check(new_phase_state) is True:
-                        self.list_of_dict[current_round - 3].setdefault(new_phase_state.to_key(self.focus_tags),
+                        self.list_of_dict[current_round - 3].setdefault(new_phase_state.to_key(),
                                                                         new_phase_state)
                         # no need to check duplicate
                         if current_round != 7:
-                            self.temp_dict.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                            self.temp_dict.setdefault(new_phase_state.to_key(), new_phase_state)
                             self.temp_list[current_round - 3] += 1
                     else:
-                        self.fail_states_dict_set.setdefault(new_phase_state.to_key(self.focus_tags), new_phase_state)
+                        self.fail_states_dict_set.setdefault(new_phase_state.to_key(), new_phase_state)
                         # time = datetime.datetime.now()
                         # print(time)
                         print("hahaha")
@@ -151,7 +149,7 @@ class TwinsRunner:
         self.run_times_before_add_queue = self.top
 
     def duplicate_checking(self, dict_set, new_phase_state):
-        if dict_set.get(new_phase_state.to_key(self.focus_tags)) is not None:
+        if dict_set.get(new_phase_state.to_key()) is not None:
             return True
         else:
             return False
@@ -218,7 +216,7 @@ class TwinsRunner:
         for i, phase_state in enumerate(fail_phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
                 fail_dicts += f'#{i}\n'
-                fail_dicts += phase_state.to_string(self.focus_tags)
+                fail_dicts += phase_state.to_string()
                 # if i != len(fail_phase_state_list) - 1:
                 #     fail_dicts += ';\n'
                 if i != 9:
@@ -230,7 +228,7 @@ class TwinsRunner:
         for i, phase_state in enumerate(phase_state_list):
             if isinstance(phase_state.node_state_dict, dict):
                 dicts += f'#{i}\n'
-                dicts += phase_state.to_string(self.focus_tags)
+                dicts += phase_state.to_string()
                 # if i != len(phase_state_list) - 1:
                 #     dicts += ';\n'
                 if i != 9:
@@ -317,18 +315,18 @@ if __name__ == '__main__':
     # print(time)
     parser = argparse.ArgumentParser(description='Twins Executor.')
     parser.add_argument('--num_of_protocol', help='num of protocol')
-    parser.add_argument('--depth', help='depth')
     parser.add_argument('--seed', help='seed')
     parser.add_argument('--path', help='path to the scenario file')
     parser.add_argument('--log', help='output log directory')
-    parser.add_argument('--v', action='store_true', help='verbose logging')
-    parser.add_argument('--focus', help='tag num list')
+    parser.add_argument('--topn', help='top n most propri')
     args = parser.parse_args()
 
-    args.v = True
-
+    # logging.basicConfig(
+    #     level=logging.DEBUG if args.v else logging.INFO,
+    #     format='[%(levelname)s] %(message)s'
+    # )
     logging.basicConfig(
-        level=logging.DEBUG if args.v else logging.INFO,
+        level=logging.DEBUG,
         format='[%(levelname)s] %(message)s'
     )
 
@@ -340,10 +338,8 @@ if __name__ == '__main__':
         runner.list_of_dict.append(dict())
 
     # how many failures in one scenario
-    runner.depth = int(args.depth)
     # random seed
     runner.seed = int(args.seed)
-    runner.focus_tags = args.focus.split(',')  # num list
-    runner.top = 4
+    runner.top = int(args.topn)
 
     runner.run()
