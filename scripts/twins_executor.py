@@ -110,7 +110,7 @@ class TwinsRunner:
                         print("hahaha")
                         T2 = time.time()
                         print(T2 - T1)
-                        return
+                        # return
 
                 if self.log_path is not None and self.states_safety_check(new_phase_state) is False:
                     file_path = join(self.log_path, f'failure-violating-{self.failed_times}.log')

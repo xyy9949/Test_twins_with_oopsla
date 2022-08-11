@@ -33,51 +33,6 @@ class PhaseState:
                 else:
                     self.if_bk_same = 0
 
-    def __eq__(self, other):
-        if self.node_state_dict.get(0) is None and other.node_state_dict.get(0) is not None:
-            return False
-        if self.node_state_dict.get(1) is None and other.node_state_dict.get(1) is not None:
-            return False
-        if self.node_state_dict.get(2) is None and other.node_state_dict.get(2) is not None:
-            return False
-        if self.node_state_dict.get(3) is None and other.node_state_dict.get(3) is not None:
-            return False
-        if self.node_state_dict.get(4) is None and other.node_state_dict.get(4) is not None:
-            return False
-        if self.node_state_dict.get(0) is not None and other.node_state_dict.get(0) is None:
-            return False
-        if self.node_state_dict.get(1) is not None and other.node_state_dict.get(1) is None:
-            return False
-        if self.node_state_dict.get(2) is not None and other.node_state_dict.get(2) is None:
-            return False
-        if self.node_state_dict.get(3) is not None and other.node_state_dict.get(3) is None:
-            return False
-        if self.node_state_dict.get(4) is not None and other.node_state_dict.get(4) is None:
-            return False
-        if (self.node_state_dict.get(0) == other.node_state_dict.get(0) or (
-                self.node_state_dict.get(0) is None and other.node_state_dict.get(0) is None)) \
-                and (self.node_state_dict.get(1) == other.node_state_dict.get(1) or (
-                self.node_state_dict.get(1) is None and other.node_state_dict.get(1) is None)) \
-                and (self.node_state_dict.get(2) == other.node_state_dict.get(2) or (
-                self.node_state_dict.get(2) is None and other.node_state_dict.get(2) is None)) \
-                and (self.node_state_dict.get(3) == other.node_state_dict.get(3) or (
-                self.node_state_dict.get(3) is None and other.node_state_dict.get(3) is None)) \
-                and (self.node_state_dict.get(4) == other.node_state_dict.get(4) or (
-                self.node_state_dict.get(4) is None and other.node_state_dict.get(4) is None)):
-            return True
-        else:
-            return False
-
-    def __hash__(self) -> int:
-        return super().__hash__()
-
-    def __str__(self) -> str:
-        return self.node_state_dict.get(0).__str__() \
-               + ',' + self.node_state_dict.get(1).__str__() \
-               + ',' + self.node_state_dict.get(2).__str__() \
-               + ',' + self.node_state_dict.get(3).__str__() \
-               + ',' + self.node_state_dict.get(4).__str__()
-
     def to_string(self, tags) -> str:
         result = 'Node States: \n'
         if self.node_state_dict.get(0) is None:
@@ -173,28 +128,6 @@ class NodeState:
         self.votes = votes
         self.message_to_send = message_to_send
         self.dict_key = node_name
-
-    def __eq__(self, other):
-        if self.node_name == other.node_name and \
-                list(sorted(self.highest_qc.votes, key=lambda x: x.author)) == \
-                list(sorted(other.highest_qc.votes, key=lambda x: x.author)) and \
-                self.highest_qc_round == other.highest_qc_round and \
-                self.last_voted_round == other.last_voted_round and \
-                self.preferred_round == other.preferred_round and \
-                self.votes == other.votes and \
-                list(sorted(self.message_to_send, key=lambda x: x.for_sort())) == list(sorted(other.message_to_send, key=lambda x: x.for_sort())) and \
-                list(sorted(self.committed, key=lambda x: x.for_sort())) == \
-                list(sorted(self.committed, key=lambda x: x.for_sort())):
-            return True
-        else:
-            return False
-
-    def __str__(self):
-        return f'NodeState(name:{self.node_name}, round:{self.round}, highest_qc:{self.highest_qc}, ' \
-               f'highest_qc_round:{self.highest_qc_round}, last_voted_round:{self.last_voted_round}, ' \
-               f'preferred_round:{self.preferred_round}, ' \
-               f'committed:{sorted(self.committed, key=lambda x: x.for_sort())}, ' \
-               f'message_to_send:{sorted(self.message_to_send, key=lambda x: x.for_sort())})'
 
     def to_string(self, tags) -> str:
         # 1 round
