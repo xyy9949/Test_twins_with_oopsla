@@ -1,6 +1,8 @@
 import json
 import sys
+from copy import deepcopy
 
+from automation.RecommendParam import RecommendParam
 from sim.Contacts import Contacts
 
 sys.path += '../fhs'
@@ -87,8 +89,11 @@ class TwinsRunner:
         network.failures = self.failures
 
         """ 改正了原版代码的错误 self.num_of_nodes --> self.num_of_nodes + self.num_of_twins """
-        nodes = [self.NodeClass(i, network, *self.node_args)
+        rp = RecommendParam()
+        nodes = [self.NodeClass(i, network, *self.node_args, rp)
                  for i in range(self.num_of_nodes + self.num_of_twins)]
+        for n in nodes:
+            rp.old_node_content_dict.update({n.name: deepcopy(n)})
         [n.set_le(TwinsLE(n, network, round_leaders)) for n in nodes]
         [network.add_node(n) for n in nodes]
 

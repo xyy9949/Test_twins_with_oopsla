@@ -1,3 +1,6 @@
+from copy import deepcopy
+
+from automation.RecommendParam import RecommendParam
 from sim.node import Node
 from sim.network import BColors
 from fhs.messages import Message, Block, GenericVote, Vote, NewView
@@ -7,7 +10,7 @@ import logging
 class FHSNode(Node):
     DELAY = 15  # Delay before timeout.
 
-    def __init__(self, name, network, sync_storage):
+    def __init__(self, name, network, sync_storage, rp):
         super().__init__(name, network)
         self.timeout = self.DELAY
         self.round = 3
@@ -22,6 +25,8 @@ class FHSNode(Node):
 
         # Node store (each node has its own).
         self.storage = NodeStorage(self)
+
+        self.rp = rp
 
     def receive(self, fromx, tox, message, current_phase, failures):
         """ Handles incoming messages. """
@@ -53,6 +58,9 @@ class FHSNode(Node):
 
         else:
             assert False  # pragma: no cover
+
+        self.rp.compare_node_param(self)
+        a = 1
 
     def _process_block(self, block):
         prev_block = block.qc.block(self.sync_storage)
