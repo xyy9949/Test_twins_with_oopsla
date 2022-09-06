@@ -100,6 +100,9 @@ class QC(GenericQC):
     def __repr__(self):
         return f'QC({next(iter(self.votes)).block_hash})'
 
+    def __eq__(self, other):
+        return self.__repr__() == other.__repr__()
+
 
 class AggQC(GenericQC):
     def __init__(self, new_views):

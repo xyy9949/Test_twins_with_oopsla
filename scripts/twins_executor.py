@@ -1,9 +1,10 @@
 import json
 import sys
-from copy import deepcopy
+from copy import deepcopy, copy
 
 from automation.RecommendParam import RecommendParam
 from sim.Contacts import Contacts
+from special_copy.SpecialCopy import SpecialCopy
 
 sys.path += '../fhs'
 sys.path += '../streamlet'
@@ -92,10 +93,15 @@ class TwinsRunner:
         rp = RecommendParam()
         nodes = [self.NodeClass(i, network, *self.node_args, rp)
                  for i in range(self.num_of_nodes + self.num_of_twins)]
-        for n in nodes:
-            rp.old_node_content_dict.update({n.name: deepcopy(n)})
         [n.set_le(TwinsLE(n, network, round_leaders)) for n in nodes]
         [network.add_node(n) for n in nodes]
+
+        sc = SpecialCopy(None)
+        for n in nodes:
+            rp.old_node_content_dict.update({n.name: sc.special_copy(n)})
+
+        rp.init_node_param_name_list(nodes[0])
+        rp.init_changed_param_dict()
 
         # set pseudonym for nodes
         # compromised = [0]
@@ -105,6 +111,9 @@ class TwinsRunner:
 
         logging.debug(f'3/3 Executing scenario ({len(round_leaders)} rounds).')
         network.run(until=150)
+        for k, v in rp.changed_param_dict.items():
+            if v > 0:
+                print(k)
         return network
 
     def _print_log(self, file_path, scenario, network):

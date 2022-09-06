@@ -60,7 +60,6 @@ class FHSNode(Node):
             assert False  # pragma: no cover
 
         self.rp.compare_node_param(self)
-        a = 1
 
     def _process_block(self, block):
         prev_block = block.qc.block(self.sync_storage)
