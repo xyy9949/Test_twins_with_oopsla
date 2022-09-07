@@ -38,7 +38,7 @@ class NodeStorage():
     def __init__(self, node):
         self.node_name = node.name
         self.node_round = node.round
-        self.quorum = node.network.quorum
+        self.quorum = None
         self.committed = set()
         self.votes = defaultdict(set)
         self.new_views = defaultdict(set)

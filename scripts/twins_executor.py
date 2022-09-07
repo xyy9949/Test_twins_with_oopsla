@@ -100,6 +100,9 @@ class TwinsRunner:
         [network.add_node(n) for n in nodes]
 
         for n in nodes:
+            n.storage.quorum = network.quorum
+
+        for n in nodes:
             rp.old_node_content_dict.update({n.name: sc.special_copy(n)})
 
         rp.init_node_param_name_list(nodes[0])
