@@ -31,6 +31,19 @@ class SyncStorage():
         """ Adds a block to the storage. """
         self.blocks[block.digest()] = block
 
+    def __eq__(self, other):
+        # compare blocks
+        if len(self.blocks) != len(other.blocks):
+            return False
+        else:
+            for digest, bk in self.blocks.items():
+                if other.blocks.get(digest) is None:
+                    return False
+                else:
+                    if bk != other.blocks.get(digest):
+                        return False
+        return True
+
 
 class NodeStorage():
     """ The node storage: each node gets its own. """
@@ -75,3 +88,7 @@ class NodeStorage():
         collection[key].add(value)
         after = len(collection[key]) >= self.quorum
         return collection[key] if (after and not before) else None
+
+    def __eq__(self, other):
+        # compare committed votes new_views
+        return True
