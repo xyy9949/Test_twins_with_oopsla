@@ -4,10 +4,11 @@ from special_copy.SpecialCopy import SpecialCopy
 
 
 class RecommendParam:
-    def __init__(self):
+    def __init__(self, sc):
         self.changed_param_dict = dict()  # key:param name, value:changing times
         self.old_node_content_dict = dict()
         self.node_param_name_list = list()
+        self.sc = sc
 
     def init_node_param_name_list(self, node):
         self.node_param_name_list = list(node.__dict__.keys())
@@ -26,5 +27,4 @@ class RecommendParam:
             if a != b:
                 new_value = self.changed_param_dict.get(param_name) + 1
                 self.changed_param_dict.update({param_name: new_value})
-        sc = SpecialCopy(None)
-        self.old_node_content_dict.update({new_node_content.name: sc.special_copy(new_node_content)})
+        self.old_node_content_dict.update({new_node_content.name: self.sc.special_copy(new_node_content)})

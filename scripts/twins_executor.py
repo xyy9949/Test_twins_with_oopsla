@@ -90,13 +90,15 @@ class TwinsRunner:
         network.failures = self.failures
 
         """ 改正了原版代码的错误 self.num_of_nodes --> self.num_of_nodes + self.num_of_twins """
-        rp = RecommendParam()
+        ignore_param_list = ["le", "network", "storage", "rp", "log"]
+        # ignore_param_list = ["le", "network", "storage"]
+        sc = SpecialCopy(ignore_param_list)
+        rp = RecommendParam(sc)
         nodes = [self.NodeClass(i, network, *self.node_args, rp)
                  for i in range(self.num_of_nodes + self.num_of_twins)]
         [n.set_le(TwinsLE(n, network, round_leaders)) for n in nodes]
         [network.add_node(n) for n in nodes]
 
-        sc = SpecialCopy(None)
         for n in nodes:
             rp.old_node_content_dict.update({n.name: sc.special_copy(n)})
 
