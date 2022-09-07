@@ -36,14 +36,16 @@ class NodeStorage():
     """ The node storage: each node gets its own. """
 
     def __init__(self, node):
-        self.node = node
+        self.node_name = node.name
+        self.node_round = node.round
+        self.quorum = node.network.quorum
         self.committed = set()
         self.votes = defaultdict(set)
         self.new_views = defaultdict(set)
 
     def __repr__(self):
         return (
-            f'NodeStorage content ({self.node} at round {self.node.round}):\n'
+            f'NodeStorage content (Node{self.node_name} at round {self.node_round}):\n'
             f'\tVotes({len(self.votes)}): {self.votes}\n'
             f'\tNewViews({len(self.new_views)}): {self.new_views}\n'
             f'\tCommitted({len(self.committed)}): {self.committed}'
@@ -69,7 +71,7 @@ class NodeStorage():
         self.committed.add(block)
 
     def _can_make_qc(self, collection, key, value):
-        before = len(collection[key]) >= self.node.network.quorum
+        before = len(collection[key]) >= self.quorum
         collection[key].add(value)
-        after = len(collection[key]) >= self.node.network.quorum
+        after = len(collection[key]) >= self.quorum
         return collection[key] if (after and not before) else None
