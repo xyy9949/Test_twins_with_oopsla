@@ -90,7 +90,7 @@ class TwinsRunner:
         network.failures = self.failures
 
         """ 改正了原版代码的错误 self.num_of_nodes --> self.num_of_nodes + self.num_of_twins """
-        ignore_param_list = ["le", "network", "rp", "log"]
+        ignore_param_list = ["le", "network", "rp"]
         # ignore_param_list = ["le", "network", "storage"]
         sc = SpecialCopy(ignore_param_list)
         rp = RecommendParam(sc)

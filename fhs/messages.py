@@ -58,6 +58,15 @@ class Vote(GenericVote):
     def __repr__(self):
         return f'V(Node{self.author}, {self.block_hash})'
 
+    def __eq__(self, other):
+        return self.block_hash == other.block_hash and self.author == other.author
+
+    def __hash__(self):
+        return hash(self.__repr__())
+
+    def for_sort(self):
+        return f'V(Node{self.author}, {self.block_hash})'
+
 
 class NewView(GenericVote):
     def __init__(self, qc, round, author):

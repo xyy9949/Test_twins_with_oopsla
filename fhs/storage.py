@@ -90,5 +90,28 @@ class NodeStorage():
         return collection[key] if (after and not before) else None
 
     def __eq__(self, other):
-        # compare committed votes new_views
+        # compare committed votes
+        # eq finished
+        l = sorted(self.committed, key=lambda x: x.for_sort())
+        l1 = sorted(other.committed, key=lambda x: x.for_sort())
+        if len(l) != len(l1):
+            return False
+        else:
+            for i in range(len(l)):
+                if l.pop() != l1.pop():
+                    return False
+
+        # compare votes
+        if len(self.votes) != len(other.votes):
+            return False
+        for k, v in self.votes.items():
+            if k not in other.votes.keys():
+                return False
+            else:
+                set1 = v
+                set2 = other.votes.get(k)
+                for i in range(len(set1)):
+                    if set1.pop() != set2.pop():
+                        return False
+
         return True
