@@ -28,6 +28,15 @@ class Block(Message):
     def for_sort(self):
         return f'Block(round:{self.round}, author:{self.author}, content:{self.qc})'
 
+    def __eq__(self, other):
+        return self.qc == other.qc and self.round == other.round and self.author == other.author
+
+    def __hash__(self):
+        digest = hash(self.author)
+        digest ^= hash(self.round) << 1
+        digest ^= hash(self.qc.__repr__()) << 1
+        return digest
+
 # --- Votes ---
 
 
@@ -48,6 +57,15 @@ class Vote(GenericVote):
         return self.signature and self.author in network.nodes.keys()
 
     def __repr__(self):
+        return f'V(Node{self.author}, {self.block_hash})'
+
+    def __eq__(self, other):
+        return self.block_hash == other.block_hash and self.author == other.author
+
+    def __hash__(self):
+        return hash(self.__repr__())
+
+    def for_sort(self):
         return f'V(Node{self.author}, {self.block_hash})'
 
 

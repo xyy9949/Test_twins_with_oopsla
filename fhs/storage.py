@@ -31,6 +31,20 @@ class SyncStorage():
         """ Adds a block to the storage. """
         self.blocks[block.digest()] = block
 
+    def __eq__(self, other):
+        # compare blocks
+        if len(self.blocks) != len(other.blocks):
+            return False
+        else:
+            for digest, bk in self.blocks.items():
+                if other.blocks.get(digest) is None:
+                    return False
+                else:
+                    if bk != other.blocks.get(digest):
+                        return False
+        return True
+
+
 
 class NodeStorage():
     """ The node storage: each node gets its own. """
@@ -73,3 +87,34 @@ class NodeStorage():
         collection[key].add(value)
         after = len(collection[key]) >= self.node.network.quorum
         return collection[key] if (after and not before) else None
+
+    def __eq__(self, other):
+        # compare committed votes
+        l = sorted(self.committed, key=lambda x: x.for_sort())
+        l1 = sorted(other.committed, key=lambda x: x.for_sort())
+        if len(l) != len(l1):
+            return False
+        elif len(l) != 0:
+            for i in range(len(l)):
+                if l.pop() != l1.pop():
+                    return False
+
+        # compare votes
+        if len(self.votes) != len(other.votes):
+            return False
+        elif len(self.votes) != 0:
+            for k, v in self.votes.items():
+                if k not in other.votes.keys():
+                    return False
+                else:
+                    vote_list1 = sorted(v, key=lambda x: x.for_sort())
+                    vote_list2 = sorted(other.votes.get(k), key=lambda x: x.for_sort())
+                    if len(vote_list1) != len(vote_list2):
+                        return False
+                    for i in range(len(vote_list1)):
+                        vote1 = vote_list1[i]
+                        vote2 = vote_list2[i]
+                        if vote1 != vote2:
+                            return False
+
+        return True
