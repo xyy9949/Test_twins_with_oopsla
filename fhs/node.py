@@ -59,7 +59,8 @@ class FHSNode(Node):
         else:
             assert False  # pragma: no cover
 
-        self.rp.compare_node_param(self)
+        if self.round <= 7:
+            self.rp.compare_node_param(self)
 
     def _process_block(self, block):
         prev_block = block.qc.block(self.sync_storage)

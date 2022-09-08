@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from sim.message import Message
 
 
