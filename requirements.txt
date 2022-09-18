@@ -1,5 +1,5 @@
 simpy==4.0.1
-numpy==1.22.2
+numpy==1.23.3
 pytest
 pytest-cov
 argparse==1.4.0
